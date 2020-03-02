@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -53,23 +53,23 @@ public function json(s : string) : string {
 }
 
 /* --------------------------------------
-  Grammar rules 
+  Grammar rules
 ---------------------------------------- */
 
 // A grammar rule. When "regex" matches, "action" is called with the
 // capture groups and the a parser context ":c". The action returns
 // results of type ":a" (":block" for the block grammar, and ":string"
 // for the inline grammar)
-public struct rule<a,c>( 
-  name : string, 
-  regex : regex, 
-  action : (cap : matched, context : c) -> a ) 
+public struct rule<a,c>(
+  name : string,
+  regex : regex,
+  action : (cap : matched, context : c) -> a )
 
 public alias grammar<a,c> = list<rule<a,c>>
 
 // Replace a rule in a grammar by another one, if the rule name is a prefix of the name of the new rule.
 public function ruleReplace( grammar : grammar<a,c>, pred : bool, rule : rule<a,c> ) : grammar<a,c> {
-  if (!pred) 
+  if (!pred)
    then grammar
    else grammar.map fun(r) {
      if (rule.name.startsWith(r.name)) then rule else r
@@ -80,10 +80,10 @@ public function ruleRemove( grammar : grammar<a,c>, pred : bool, names : list<st
   if (!pred) then return grammar
   grammar.filter fun(rule) {
     names.all( fun(nm) { !(rule.name.startsWith(nm)) })
-  } 
+  }
 }
 
-// Combine rules into one regular expression. 
+// Combine rules into one regular expression.
 // For inline expressions, this does not improve the performance much.
 public function combineRules( rules : list<rule<a,c>> ) : rule<a,c> {
   val (rxs,lactions) = rules.map( fun(rule) { (rule.regex.source, rule.action) }).unzip
@@ -97,14 +97,14 @@ public function combineRules( rules : list<rule<a,c>> ) : rule<a,c> {
 
 
 /* --------------------------------------
-  Generic rule matcher 
+  Generic rule matcher
 ---------------------------------------- */
 
 // Generic rule matcher: takes a list of rules and applies the action that matches
 // on the given "src". Returns the result of the action and the string following the
 // match.
 public function matchRules( rules : grammar<a,c>, context : c, src : string, def : string -> a ) : (a,int,string)
-{  
+{
   match(rules) {
     Nil -> {
       //trace("Unable to match any rule!")
@@ -117,7 +117,7 @@ public function matchRules( rules : grammar<a,c>, context : c, src : string, def
           //if (rule.name[0] != '.') then trace("match: " + rule.name.fill(12) + ": " + cap.matched.show )
           // Uncomment the next line to get a histogram of rule matches
           // ruleInc(rule.name)
-          ((rule.action)(cap,context), cap.next, cap.matched)//src.substr(cap.next)) 
+          ((rule.action)(cap,context), cap.next, cap.matched)//src.substr(cap.next))
         }
         Nothing -> {
           //stat("fail-" + rule.name)
@@ -137,7 +137,7 @@ function ruleInc( rule : string ) : () {
       Nothing -> ruleHist[rule] := 0
       Just(i) -> ruleHist[rule] := i+1
     }
-  } 
+  }
 }
 
 public function traceRuleHist() {
@@ -150,20 +150,20 @@ public function traceRuleHist() {
 }
 
 /* --------------------------------------
- Line maps to track line numbers in include files 
+ Line maps to track line numbers in include files
 ---------------------------------------- */
 
 public type lineMap  {
   End
-  Include( 
-    line: int,        // line of the [INCLUDE] 
+  Include(
+    line: int,        // line of the [INCLUDE]
     start: int,       // start line of included fragment
     count: int,       // number of lines in the included text
     fileName: string, // include file name
     lineMap: lineMap, // lineMap of the included file
-    rest: lineMap 
+    rest: lineMap
   )
-} 
+}
 
 public function reverse( lineMap : lineMap ) : lineMap {
   reverseAcc( lineMap, End)
@@ -181,26 +181,26 @@ public function translateLine( lineInfos: lineMap, lineNo : int ) : string {
   match(lineInfos) {
     End -> lineNo.show
     Include(line,start,span,fileName,include,rest) -> {
-      if (lineNo < line) 
+      if (lineNo < line)
        then lineNo.show
       elif (lineNo >= line + span)
        then translateLine( rest, lineNo - (span - 1))
-       else line.show + ";" + fileName + ":" + translateLine(include,(lineNo - line) + start) 
+       else line.show + ";" + fileName + ":" + translateLine(include,(lineNo - line) + start)
     }
   }
 }
 
 
 /* --------------------------------------
- Citations styles 
+ Citations styles
 ---------------------------------------- */
 
 public struct citestyle(
-  mode  : citemode, 
-  open  : string, 
-  close : string, 
-  citesep : string, 
-  aysep : string, 
+  mode  : citemode,
+  open  : string,
+  close : string,
+  citesep : string,
+  aysep : string,
   yysep : string,
   sort  : bool = False,
   compress : bool = False
@@ -263,23 +263,23 @@ public function parseCiteStyle( text : string ) : maybe<citestyle> {
                  elif (cap.groups[1]=="textual") then citeTextual
                  elif (cap.groups[1]=="numeric") then citeNumeric
                  elif (cap.groups[1]=="super") then citeSuper
-                 else citeAuto      
+                 else citeAuto
       val xsort = if (cap.groups[2]!="") then (cap.groups[2]=="sort") else cite.sort
-      val xcompress = xsort      
+      val xcompress = xsort
       val style =
-        if (cap.groups.matchedOn(3)) {           
+        if (cap.groups.matchedOn(3)) {
           val sep   = if (cap.groups.matchedOn(5)) then cap.groups[5].unquote else "; "
           val aysep = if (cap.groups.matchedOn(6)) then cap.groups[6].unquote else ", "
-          val yysep = if (cap.groups.matchedOn(7)) then cap.groups[7].unquote else aysep      
+          val yysep = if (cap.groups.matchedOn(7)) then cap.groups[7].unquote else aysep
           Citestyle(cite.mode,cap.groups[3].unquote,cap.groups[4].unquote,sep,aysep,yysep,xsort,xcompress)
         }
         else {
-          if (cite.sort != xsort) 
-           then cite(sort=xsort,compress=xcompress) 
+          if (cite.sort != xsort)
+           then cite(sort=xsort,compress=xcompress)
            else cite
         }
       Just(style)
-    } 
+    }
     Nothing -> Nothing
   }
 }
@@ -291,7 +291,7 @@ val rxVals     = rxVal + "," + rxVal + rxValOpt + rxValOpt + rxValOpt
 val rxCiteSpec = regex(@"^(natural|sqnatural|textual|numeric|super|auto)(?:[:](sort|nosort))?(?:[:]" + rxVals + ")?" )
 
 /* --------------------------------------
- Links 
+ Links
 ---------------------------------------- */
 // A url link.
 public struct link( href : string, title : string = "", linkattrs : attrs = attrsNone, linkid : string = "" )
@@ -299,14 +299,14 @@ public struct link( href : string, title : string = "", linkattrs : attrs = attr
 // A definition identifier is always lower case and sequences of spaces are replaced by a single space.
 // Used for links for example.
 public function definitionId( s : string ) : string {
-  s.replaceAll(rxspaces," ").toLower    
+  s.replaceAll(rxspaces," ").toLower
 }
 val rxspaces = regex(@"\s+")
 
 public function newLink( href : string, title : string = "", linkattrs : attrs = attrsNone, linkid : string = "", bench : bool ) : link {
   Link(href,title,
        if (!bench && href.startsWith("#"))
-        then linkattrs.addClass("localref") 
+        then linkattrs.addClass("localref")
         else linkattrs,
        linkid)
 }
@@ -334,7 +334,7 @@ public struct embedinfo (
 
 
 public type mathrender {
-  con Png 
+  con Png
   con Svg
 }
 
@@ -372,8 +372,8 @@ public function show( m : mathkind ) : string {
 ---------------------------------------- */
 public function expandChoices( s : string ) : list<string> {
   match (s.find(rxChoicePattern)) {
-    Just(cap) -> { 
-      val pre = s.substr(0,cap.index) 
+    Just(cap) -> {
+      val pre = s.substr(0,cap.index)
       val post = s.substr(cap.next)
       cap.groups[1].split(",").list.map fun(part) { pre + part + post }
     }
@@ -398,7 +398,7 @@ public function pickExtension( exts : list<string>, paths : list<string> ) : str
 }
 
 /* --------------------------------------
- Attributes 
+ Attributes
 ---------------------------------------- */
 public type formatter {
   FmtHtml
@@ -451,7 +451,7 @@ public function show( attrs : attrs ) : string {
 }
 
 // Attributes
-public struct attrs  ( 
+public struct attrs  (
   empty   : bool = False,
   sticky  : bool = False,
   defaults: bool = True,
@@ -459,9 +459,9 @@ public struct attrs  (
 
   replacers : list<string> = [],    // replacers
   notag   : bool = False,           // suppress output of tag
-  tight   : bool = False,           // suppress first paragraph  
+  tight   : bool = False,           // suppress first paragraph
   input   : input = Markdown(),       // how to input the content
- 
+
   elem    : string = "",            // element name
   texelem : string = "",            // element name used for TeX command or environment
   htmlelem : string = "",           // element name used for HTML tag
@@ -471,7 +471,7 @@ public struct attrs  (
   lineNo  : int = 0,                // starting lineno of the element
   classes : list<string> = [],            // class, without "." prefix
   counters: list<(string,string)> = [],   // counters, without "@" prefix
-  keyvals : list<(string,string)> = []    // key=value pairs 
+  keyvals : list<(string,string)> = []    // key=value pairs
 )
 
 
@@ -506,7 +506,7 @@ public function addKeyvals( attrs : attrs, kvs : list<(string,string)> ) : attrs
 }
 
 public function addKeyval( attrs : attrs, key : string, value : string ) : attrs {
-  attrs(keyvals=attrs.keyvals.filter(fun(kv){ kv.fst != key }) + [(key,value)], 
+  attrs(keyvals=attrs.keyvals.filter(fun(kv){ kv.fst != key }) + [(key,value)],
         text=attrs.text+" ; "+key+": "+value.quote, empty=False)
 }
 
@@ -537,7 +537,7 @@ public function hasBoolKey( attrs : attrs, key : string ) : bool {
 
 public function hasClass( attrs : attrs, className : string ) : bool {
   attrs.classes.find( fun(cname) { cname==className }).bool
-} 
+}
 
 
 // Generate a fresh id if it is not specified
@@ -550,9 +550,9 @@ public function generateHeaderId( attrs : attrs, heading : string, pre : string 
   attrs1
 }
 
- 
+
 // Normalize an identifier: just keep letters, digits, underscores, colons, stars, and dashes,
-// replace whitespace, colons, and stars by a dash, and convert to lower case. 
+// replace whitespace, colons, and stars by a dash, and convert to lower case.
 public function normalizeId( txt : string ) : string {
   txt.replaceAll(regex(@"[^\w\-_:\*\s]+"),"")
      .replaceAll(regex(@"\s+|[:\*]"),"-")
@@ -590,7 +590,7 @@ val mimes = dict([
   ("html","text/html"),
   ("htm","text/html"),
   ("js","text/javascript"),
-  
+
   ("tex","text/tex"),
   ("sty","text/latex"),
   ("cls","text/latex"),
@@ -625,11 +625,11 @@ val rxProtocol = regex(@"^(\w+:|//)");
 
 
 public function htmlEscape( s : string, allowEntity : bool = False ) {
-  if (s.contains(rxhtml)) 
+  if (s.contains(rxhtml))
    then s.replaceAll( if (allowEntity) then rxnoEntityAmp else rxamp,"&amp;")
          .replaceAll(rxlt,"&lt;").replaceAll(rxgt,"&gt;")
          .replaceAll(rxquot,"&quot;").replaceAll(rxapos,"&#39;")
-   else s        
+   else s
 }
 val rxnoEntityAmp = regex(@"&(?!#?\w+;)")
 val rxamp = regex(@"&")
@@ -652,7 +652,7 @@ public function unindent( txt : string ) : string {
     Nothing   -> 0
     Just(cap) -> cap.matched.length
   }}).minimum
-  if (cindent <= 0) 
+  if (cindent <= 0)
    then txt
    else lines.map( fun(s) { s.substr(cindent) }).join("\n")
 }

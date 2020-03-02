@@ -115,51 +115,8 @@ public function fmtLatexCodePlain( context : inlineContext, txt : string, startl
 
 public function fmtLatexCodeToken(context:inlineContext, classes : list<string>, txt : string, lang : string, attrs : attrs ) : string
 {
-  /*
-  if (classes.any(fun(cname) { cname=="white" })) then {
-    "{" + txt + "}" // so preindent can match
-  }
-  else {
-  */
-    /*
-    val cclasses = classes.map( fun(cname) { cname.replaceAll(regex(@"[^a-zA-Z]+"),"") })
-                    .filter( fun(cname) { cname != "" && cname != "token" })
-    @"\mdtoken{" + cclasses.join(",") + "}{"
-    */
     texCmd("span",txt,attrs)
-  //}
 }
-
-/*
-function fmtLatexCodeHilite( context : inlineContext, txt : string, startLine : bool ) : (string)
-{
-  unTokenize(txt,startLine)
-}
-
-
-function unTokenize( txt : string, startLine : bool ) : string {
-  var nl := startLine
-  txt.replaceAll(rxTagged, fun(cap) {
-        if (cap.groups.matchedOn(1)) {
-          val res = cap.matched.texText.preSpace(nl)
-          nl := False
-          res
-        }
-        elif (cap.matched=="<br>") then {
-          nl := True
-          "\\prebr{}\n"
-        }
-        else cap.matched
-      })
-      .replaceAll(rxToken, fun(cap) {
-        val classes=cap.groups[1].toLower.trim.split(rxSpaces).list
-        fmtLatexCodeToken( classes, cap.groups[2] )
-      })
-}
-val rxToken = regex(@"<span\s+.*?\bclass=['""]?([^""']+)['""]?[^>]*>([\s\S]*?)</span>",ignoreCase=True)
-val rxBr = regex(@"\n|<br>")
-val rxTagged = regex(@"([^<>]+)|<([^>]*)>")
-*/
 
 public function preSpace( txt : string, start : bool = True ) : string {
   val txt1 = if (!start) then txt
@@ -167,18 +124,11 @@ public function preSpace( txt : string, start : bool = True ) : string {
                      cap.groups[1] + @"\preindent{" + cap.groups[2].length.show + "}"
                    })
   txt1.replaceAll("\n","\\\\\n").replaceAll(" ","~")
-  /*
-  txt.replaceAll(rxIndent,fun(cap){ cap.groups[1] + (if (start) then @"\preindent" else @"\prespace") + "{" + cap.groups[2].length.show + "}" })
-     .replaceAll(rxSpaces,fun(cap){ @"\prespace{" + cap.matched.length.show + "}"})
-     .replaceAll("\n|<br>","\\prebr{}\n")
-     .replaceAll("`","\\lsquot{}")
-  */
 }
 val rxIndent = regex(@"(^|\n)( +)")
 val rxSpaces = regex(@" +")
 
 function texLinkText( txt : string ) : string {
-  //txt.replaceAll("~","\\textasciitilde ").replaceAll("%","\\%").replaceAll("#","\\#")
   txt.replaceAll( regex(@"([%{}&#\\])"), fun(cap) { cap.matched.list.map( fun(c) { @"\%" + c.int.showHex(2) } ).join })
 }
 
@@ -577,12 +527,7 @@ function cssAttrs( attrs0 : attrs = attrsNone, body : string, defaults = [], ele
   if (hidden) return ""
 
   val isBlock = kvs.cssIsBlock
-  /*
-  val kvs = if (isBlock || elem == "span" || elem == "div" ||
-                ["tex-cmd","tex-innercmd","tex-cmd","tex-env","tex-outercmd","tex-outerenv"].any(fun(k) { kvs0.containsKey(k) }))
-             then kvs0
-             else kvs0 + [("tex-cmd","\\md" + elem.normalizeCmd)].dict
-  */
+
   body.insertCmd(kvs,"tex-cmd-inner-before")
       .appendCmd(kvs,"tex-cmd-inner-after")
       .applyCmd(kvs,"tex-cmd-inner")
@@ -811,13 +756,7 @@ function cssImageArgs( attrs : attrs ) : (attrs,string) {
   val args0 = "keepaspectratio=true" +
                 (if (w.isEmpty) then "" else ",width=" + w) +
                 (if (h.isEmpty) then "" else ",height=" + h)
-    /*
-    .onKey( kvs, "width", fun(value,b) {
-      if (value=="auto") then b else b + ",width=" + dimContentWidth(kvs)
-    })
-    .onKey( kvs, "height", fun(value,b) {
-      if (value=="auto") then b else b + ",height=" + cssHeight(value)
-    }) */
+
   val args = args0.onKey( kvs, "zoom", fun(value,b) {
       b + ",scale=" + cssPercentage(value)
     })

@@ -19,7 +19,6 @@ import common
 import attributes
 import inline
 import latexFormatter
-import htmlFormatter  // htmlEscape
 import entity
 import hilite // inlineMode
 import codeAlign
@@ -105,10 +104,7 @@ public function inlineGrammar( fmt : formatter, bench : bool = False ) {
 ---------------------------------------- */
 
 function inlineBreak( cap : matched, context ) {
-  match(context.fmt) {
-    FmtHtml -> context.fmtText("<br>\n")
-    _ -> context.fmtCmd("br","")
-  }
+  context.fmtCmd("br","")
 }
 
 function inlineEntity( cap : matched, context : inlineContext ) : string {
@@ -171,10 +167,7 @@ public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : strin
                 texcmd + "\\end{md" + kind + "Snippet}%mdk")
         // trace(txt)
         // trace("math: " + digest)
-        match(context.mathinfos[digest]) {
-          Nothing  -> context.fmtCmd("span",mcmd,attrsNone.addClass("math-rendering").addKeyval("html-title","Rendering math..."))
-          Just(mi) -> context.fmtMathImg(mi,txt,mtxt,attrsd)
-        }
+        context.fmtCmd("span",mcmd,attrsNone.addClass("math-rendering").addKeyval("html-title","Rendering math..."))
       }
       else mcmd
     }
@@ -188,56 +181,8 @@ function logMathLocation(digest: string, attrs: attrs) {
   else log("math-locations", start + "," + end + "," + digest)
 }
 
-public function fmtMathImg( context : inlineContext, mi : mathinfo, txt : string, mtxt : string, attrs : attrs ) {
-  val scale = match(attrs.hasKey("math-scale")) {
-            Just(value) -> value.parseInt.maybe(100,id).double / 100.0
-            Nothing     -> 1.0
-          }
-  val baseline = match(attrs.hasKey("math-baseline")) {
-                   Just(value) -> value.parseInt.maybe(0,id).double
-                   Nothing     -> 0.0
-                 }
-  // Depth and height are in _pt_. Since we assume that the math has been
-  // type set with a 10pt font, we divide by 10 to get the units in _em_.
-  // This has the advantage that it will scale automatically if the user
-  // selected a larger display font.
-  // We substract bboxFuzz from the depth to adjust for extra bbox spaces
-  // when extracting images.
-  val fontsize = 10.0
-  val valign   = baseline - ( (scale * (mi.depth + mi.bboxFuzz))  / fontsize)
-  val height   = (scale * mi.height / fontsize)
-  val width    = (scale * mi.width / fontsize)
-  val xattrs0  = if (valign== 0.0) then attrs
-                  else attrs.addKeyvalIfNotExist("vertical-align",valign.showFixed(4) + "em")
-  val xattrs1  = xattrs0.addClass(
-                  if (mi.imageData.startsWith(svgPrefix) || mi.imageName.extname.toLower == ".svg")
-                    then "math-render-svg" else "math-render-png")
-  val xattrs  = xattrs1.addKeyvalIfNotExist("height",height.showFixed(4) + "em").addClass("math")
-  val wattrs  = xattrs.addKeyvalIfNotExist("width", width.showFixed(4) + "em")
-
-  if (height<=0.0 || width<=0.0) {
-    // empty image
-    context.fmtCmd("span","",wattrs.addKeyval("html-alt",mtxt))
-  }
-  elif (mi.imageData.startsWith(svgPrefix)) {
-    // embedded svg: format it inline with the attributes spliced in
-    val svg = mi.imageData.substr(svgPrefix.length)
-    context.fmtHtmlSvg( svg, wattrs, mtxt )
-  }
-  else {
-    // png, or svg image file, emit an img element
-    val src = if (mi.imageData!="") then mi.imageData else mi.imageName
-    context.fmtLink(True,Link(src,"",xattrs),mtxt)
-  }
-}
-
-val svgPrefix = "data:image/svg+xml;charset=utf8,"
-
 function escapeMath( txt : string, fmt : formatter ) : string {
-  match(fmt) {
-    FmtHtml -> txt.htmlEscape
-    FmtTex  -> txt
-  }
+  txt
 }
 
 
@@ -729,11 +674,7 @@ public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs =
         log("math-" + mode.show,
               @"\begin{md" + kind + "Snippet}[" + digest + "]%mdk\n" +
                 texcmd + "\\end{md" + kind + "Snippet}%mdk")
-        //trace("math: " + digest)
-        match(context.mathinfos[digest]) {
-          Nothing  -> context.fmtCmd("span",mcmd,attrsNone.addClass("math-rendering").addKeyval("html-title","Rendering math..."))
-          Just(mi) -> context.fmtMathImg(mi,txt,mtxt,attrsd)
-        }
+        context.fmtCmd("span",mcmd,attrsNone.addClass("math-rendering").addKeyval("html-title","Rendering math..."))
       }
       else mcmd
     }

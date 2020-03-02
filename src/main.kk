@@ -15,7 +15,6 @@ import common
 import options
 import storage
 import driver
-import runLatex
 import version
 
 public function main() : io () {

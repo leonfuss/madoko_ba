@@ -35,13 +35,6 @@ public function processContent( inName : string, outName : string, content : str
                           runners : runners,
                           continue : (output:string,inputName:string,outputName:string,options:options) -> io () ) : io ()
 {
-  if (opts.options.sandbox) enforceSandbox()
-  if (opts.convertTex) {
-    val output = content.parseTex(ignore=False)
-    writeTextFileSync(outName,output)
-    return continue( output, inName, outName, opts.options );
-  }
-
   val styleDir = opts.installDir + "/../styles"
   val searchDirs = [inName.dirname,outName.dirname,styleDir]
   val opts0  = if (inName.endsWith(".xmp.html") || inName.endsWith(".xmp"))
@@ -108,77 +101,18 @@ val rxCurDir = regex(@"^(\.)(?=[\\/])")
 
 function process( inName : string, outName : string, searchDirs : list<string>,
                   content : string, icontent : string,
-                  xopts0 : options, mopts : options, firstTime : bool, runners : runners,
+                  xopts : options, mopts : options, firstTime : bool, runners : runners,
                   redo : () -> io (),
                   continue : (string) -> io () ) : io ()
 {
-
-  function embedFiles( opts: options, files : list<string>, html0 : string ) : io (options,string) {
-    if (files.length == 0) return (opts,html0);
-
-    val infos = files.concat fun(fname) {
-                  val mime = mimeFromExt(fname);
-                  val data = if (mime.startsWith("text/"))
-                                then searchReadTextFileDef(fname,"",searchDirs,"",False)
-                              elif (mime.startsWith("image/"))
-                                then {
-                                  //trace("embed image: " + fname)
-                                  val img = readBase64FileDef(combine(inName.dirname,fname),"",False)
-                                  if (img != "") then "data:" + mime + ";base64," + img else img
-                                }
-                              else ""
-
-                  // write the file to the out directory
-                  if (data != "" && (data.length > mopts.embedLimit)) {
-                    val newName = combine(outName.dirname,fname) // assumes just relative embed names!
-                    if (newName.normalize != fname.normalize) {
-                      //trace("copying: " + fname + " to " + newName)
-                      mkdirp(newName.dirname)
-                      if (mime.startsWith("text/")) {
-                        tryWriteTextFile(newName,data);
-                      }
-                      else {
-                        tryWriteBase64File(newName,data.replace(regex(@"^data:[^;]*;base64,"),""));
-                      }
-                      ()
-                    }
-                  }
-
-                  // embed
-                  if (data != "" && data.length < mopts.embedLimit)
-                   then [(fname,Embedinfo(fname,data))]
-                  else {
-                    if (fname!="" && mopts.embedLimit > 0) {
-                      mopts.printErr("warning: unable to embed: " + fname +
-                                       (if (data.length > 0) then " (too large)" else " (does not exist)"))
-                    }
-                    []
-                  }
-                }
-    if (infos.length == 0) return (opts,html0)
-
-    val newopts = opts(embedinfos = opts.embedinfos + infos.dict, verbose=min(opts.verbose,1))
-    val newhtml = markdown(icontent,newopts).fst
-    (newopts,newhtml)
-  }
-
   function phaseHtml()
   {
     // markdown to html
-    val (fileEmbed, (warns0,(_, (html0,_fullOptions,_,_)))) =
-        withLog("embed") {
+    val (warns0,(_, (_,_fullOptions,_,_))) =
          withLogCompress("warning") {
           withLogCompress("aux") {
-           markdown(icontent,xopts0)
-         }}}
-
-    // do embedding
-    val (xopts,html) = embedFiles(xopts0,fileEmbed.split("\n").list,html0);
-
-    // write html result
-    if (!(tryWriteTextFile(outName,html))) {
-      mopts.printErr("error: unable to write: " + outName)
-    }
+           markdown(icontent,xopts)
+         }}
 
     // show warnings
     val warns = fixWarnings(warns0)
@@ -213,7 +147,7 @@ function process( inName : string, outName : string, searchDirs : list<string>,
         }
         texFiles.split("\n").list + texRefer.split("\n").list
       }
-    continue(html)
+    continue("")
   }
 
   phaseHtml()

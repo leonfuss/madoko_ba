@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013-2015 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -16,7 +16,6 @@ import common
 import options
 import driver
 import storage
-import mathStatic
 
 public function initialOptions( args : string = "" ) : io options {
   val opts = if (args=="") then Options(version=version/version)
@@ -28,7 +27,7 @@ public function initialOptions( args : string = "" ) : io options {
        math=(opts.math)(embedLimit=512*1024),   // must match server setting!
        embedLimit=0,
        copyStyles=False,
-       verboseMaxLine=0)  
+       verboseMaxLine=0)
 }
 
 val coptions = CommandOptions()
@@ -56,8 +55,8 @@ public function addImage( embeds : dict<embedinfo>, imageName : string, data : s
 
 public function markdown( inputName : string, input : string, outdir : string, options0 : options, modes: string, convertTex : bool,
                           continue: (md:string,stdout:string,needRerun:bool,options:options,
-                                      files:string,filesRefer:string,filesWrite:string,labels:string,links:string,customs:string,entities:string) -> io () ) : io () 
-{ 
+                                      files:string,filesRefer:string,filesWrite:string,labels:string,links:string,customs:string,entities:string) -> io () ) : io ()
+{
   printRedirect( fun(s) {
     log("stdout",s)
   });
@@ -67,39 +66,10 @@ public function markdown( inputName : string, input : string, outdir : string, o
 
   val copts = coptions(options = options, outputDir = outdir, convertTex = convertTex)
   val outName = outputName(inputName,copts)
-  
+
   var rerun := False;
 
-  function runPdfLatex( srcFile : string, texFile : string, opts : options, content : string, cont : (int) -> io () ) : io () 
-  {
-    options.printErr("cannot generate pdf in the browser")
-    cont(1)
-  }
-
-  function runZip( files : list<string>, zipFile : string, opts : options, cont : (bool) -> io () ) : io () {
-    options.printErr("cannot zip files in the browser")
-    cont(False)
-  }
-
-  function runBibtex( bibFiles : list<string>, opts : options, cont : bool -> io () ) : io () 
-  {
-    rerun := bibFiles.isCons
-    //trace("bibtex rerun")
-    cont(bibFiles.isCons)
-  } 
-
-  function runMathStatic( content : string, inpName : string, outputname : string,
-                          texNamePlain : string, texNameFull : string,
-                          plainPages : pages, fullPages : pages,
-                          oldMathPlain : string, oldMathFull : string,
-                          xopts : options, cont : (maybe<(dict<mathinfo>,string)>) -> io () ) : io ()
-  {
-    rerun := True
-    trace("math rerun")
-    cont(Nothing)
-  }
-
-  val runners = Runners(runPdfLatex, runBibtex, runMathStatic, runZip )
+  val runners = Runners()
 
   withLog("stdout") {
     withLog("files") {

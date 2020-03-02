@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -26,15 +26,13 @@ import inline           // for parseLineInfo
 import formatInline
 import definitions
 import entity           // logEntities
-import htmlFormatter    // for full
-import texFormatter     // support legacy
 import latexFormatter
 import attributes       // expandKeys
 import includes
 
 
 /* --------------------------------------
-  Types that are part of the public API 
+  Types that are part of the public API
 ---------------------------------------- */
 
 // TODO also migrate to range
@@ -79,13 +77,13 @@ public struct blockInfo (
 )
 
 /* --------------------------------------
-  Main library entry point 
+  Main library entry point
 ---------------------------------------- */
 
 // Takes source markdown input and returns formatted html
-public function markdown( src : string, 
-                          options : options = initialOptions0, 
-                          fmt : formatter = FmtHtml 
+public function markdown( src : string,
+                          options : options = initialOptions0,
+                          fmt : formatter = FmtTex
                         ) : pure (string,options,list<block>,formatContext)
 {
   if (options.xmp) then markdownXmp(src,options,fmt) else markdownNormal(src,options,fmt)
@@ -115,11 +113,11 @@ public function analyze(
     verbose=1,
     full=Just(False),
     copyStyles=False)
-  
+
   content.include(!resolveIncludes, inputName, "out/test.mdk", [inputName.dirname], options) fun(includedContent, lmap) {
 
     withLog("stdout") {
-      // TODO speed up again, by adding option to not run `formatBlocks` 
+      // TODO speed up again, by adding option to not run `formatBlocks`
       //      AT ALL for the presentation compiler.
       val (_,_,blocks, ctx) = markdown(includedContent, options(lineMap=lmap))
       val stdout = getLog("stdout")
@@ -132,8 +130,8 @@ public function analyze(
 }
 
 
-// Process only markdown between <xmp> tags 
-function markdownXmp( src : string, options : options = initialOptions0, fmt : formatter = FmtHtml ) : pure (string,options,list<block>,formatContext)
+// Process only markdown between <xmp> tags
+function markdownXmp( src : string, options : options = initialOptions0, fmt : formatter = FmtTex ) : pure (string,options,list<block>,formatContext)
 {
   val commented = "~begin htmlraw\n" + src.replaceAll(rxxmp,"\n~end htmlraw\n$2\n~begin htmlraw\n") + "\n~end htmlraw"
   markdownNormal(commented, options, fmt)
@@ -142,18 +140,18 @@ val rxxmp = regex(@"(<xmp\b" + tagContent + @">)([\s\S]*?)</xmp>")
 
 public function normalizeSource( src : string ) : string {
   val srcnl = if (src.contains('\r')) then src.replaceAll(regex(@"\r\n?"),"\n") else src
-  srcnl.replaceAll(regex(@"\t"), "    ") 
+  srcnl.replaceAll(regex(@"\t"), "    ")
 }
 
 // Takes source markdown input and returns formatted html
-function markdownNormal( src0 : string, options0 : options = initialOptions0, fmt : formatter = FmtHtml ) : pure (string,options,list<block>,formatContext)
-{  
+function markdownNormal( src0 : string, options0 : options = initialOptions0, fmt : formatter = FmtTex ) : pure (string,options,list<block>,formatContext)
+{
   // first normalize the input: all tabs to 4 spaces.
   val (options1,src) = parseMeta(options0,fmt,src0.normalizeSource)
   val options = options1(metadata = options1.metadata.completeAuthorKeys)
-  val xfull = options.full.maybe(True,id)     
+  val xfull = options.full.maybe(True,id)
   val logo  = if (xfull && options.logo) then "\n\n~Begin LogoMadoko\n&LogoMadoko;\n~End LogoMadoko\n" else "\n"
-  
+
   if (options.verbose>=4) then {
     trace("metadata: " + fmt.showFormatter)
     options.metadata.foreach fun(md) {
@@ -164,19 +162,19 @@ function markdownNormal( src0 : string, options0 : options = initialOptions0, fm
   //val blocks = parseBlocks(src,options.citestyle,options.bench,options.pedantic )
 
   if (options.citeAll) then log("aux",@"\citation{*}")
-  
+
   // parse definitions
   val icontext  = inlineContext(fmt,options.metadata.dict,
                                     options.math.dim,
-                                    options.embedinfos, 
+                                    options.embedinfos,
                                     options.citestyle.maybe(citeNumeric,id),
                                     options.sanitize,options.bench,options.verbose,
                                     options.math.mode.isStatic,
-                                    options.highlight,options.starBold,options.sandbox,options.prettyAlign) 
+                                    options.highlight,options.starBold,options.sandbox,options.prettyAlign)
   //if (options.verbose > 2) then trace("process definitions")
-  val (fblocks,fcontext) 
+  val (fblocks,fcontext)
     = parseBody(initialFormatContext(icontext,options.lineMap,
-                                      options.headingBase,options.pedantic,fmt), 
+                                      options.headingBase,options.pedantic,fmt),
                 options.lineNo,
                 src + logo,
                 options.metadata, options.tocDepth,
@@ -184,37 +182,18 @@ function markdownNormal( src0 : string, options0 : options = initialOptions0, fm
 
   // parse inline elements
   if (options.verbose>=3) then trace("parse inline")
-  val body = //(if (options.autoCount) then "<!-- generated by MarkedX -->\n" else "") + 
+  val body = //(if (options.autoCount) then "<!-- generated by MarkedX -->\n" else "") +
              formatBlocks(fcontext,fblocks)
   if (options.verbose>=3) then trace("generate output")
 
-  // log links, labels, and entities
-  if (fmt.isFmtHtml) {
-    fcontext.inlineContext.labels.list().foreach fun(elem) {
-      val (name,label) = elem
-      val labelName = "\"name\": " + name.json      
-      val element = ", \"element\": " + label.element.json
-      val text    = ", \"text\": " + label.labelText.json
-      val caption = ", \"caption\": " + label.labelCaption.json
-      log("labels","{" + labelName + element + text + caption + " }");
-    }
-    fcontext.inlineContext.links.list().foreach fun(elem) {
-      val (name,link) = elem
-      log("links","{ \"name\": " + name.json + ", \"href\": " + link.href.json + ", \"title\": " + link.title.json + " }" );
-    }
-    logEntities(); // log standard entities
-    logMetadata(options.metadata);
-  }
-
 
   // generate full html/tex if needed
-  val res = if (xfull) 
-             then (fmt.pick(fmtHtmlFull,fmtLatexFull))(body,options,fcontext.inlineContext.metadata)
-             else body 
+  val res = if (xfull)
+             then fmtLatexFull(body,options,fcontext.inlineContext.metadata)
+             else body
   // emit file references if necessary
-  if (!xfull || !(fmt.isFmtHtml)) then fmtHtmlFull("",options,fcontext.inlineContext.metadata) else ""
   if (!xfull || !(fmt.isFmtTex))  then fmtLatexFull("",options,fcontext.inlineContext.metadata) else ""
-  
+
   if (options.verbose>=3) then trace("done")
   (res,options,fblocks,fcontext)
 }
@@ -241,7 +220,7 @@ function logMetadata( mdata : metadata ) {
 
 
 // Create an ":inlineContext"
-public function inlineContext( fmt : formatter, 
+public function inlineContext( fmt : formatter,
                                metadata : dict<string>,
                                mathinfos : dict<mathinfo>,
                                embedinfos : dict<embedinfo>,
@@ -256,34 +235,27 @@ public function inlineContext( fmt : formatter,
                                prettyAlign : int = 2 ) : inlineContext
 {
   val isTex2  = match(metadata["tex2"]) {
-                  Just(value) -> value.toLower == "true"  
+                  Just(value) -> value.toLower == "true"
                   _ -> False
                 }
 
-  function pickx(f,g,h) {
-    match(fmt) {
-      FmtTex  -> if (isTex2) then h else g
-      FmtHtml -> f
-    }                
-  }
-  InlineContext( inlineGrammar(fmt,bench), dict(), dict(), dict(), 
+  InlineContext( inlineGrammar(fmt,bench), dict(), dict(), dict(),
                  emptyRules,
                  metadata, mathinfos, embedinfos,
                  citestyle, sanitize, bench, verbose, mathStatic, highlight, starBold, sandbox, prettyAlign,
-                 pickx(fmtHtmlCmd,fmtTexCmd,fmtLatexCmd), 
-                 pickx(fmtHtmlEscape,fmtTexEscape,fmtLatexEscape), 
-                 pickx(fmtHtmlLink,fmtTexLink,fmtLatexLink), 
-                 pickx(fmtHtmlFootnote,fmtTexFootnote,fmtLatexFootnote),
-                 pickx(fmtHtmlTable,fmtTexTable,fmtLatexTable),
-                 pickx(fmtHtmlEnv,fmtTexEnv,fmtLatexEnv),
-                 pickx(fmtHtmlCodePlain,fmtTexCodePlain,fmtLatexCodePlain),
-                 //pickx(fmtHtmlCodeHilite,fmtTexCodeHilite,fmtLatexCodeHilite),
-                 pickx(fmtHtmlCodeToken,fmtTexCodeToken,fmtLatexCodeToken),
-                 pickx(fmtHtmlLineInfo, fmtTexLineInfo, fmtLatexLineInfo),
-                 pickx(fmtHtmlCodeTable, fmtTexCodeTable, fmtLatexCodeTable),
-                 pickx(if (isTex2) then fmtLatexMathCmd else fmtTexCmd,fmtTexCmd,fmtLatexMathCmd), // math cmd
-                 pickx(if (isTex2) then fmtLatexMathEnv else fmtTexEnv,fmtTexEnv,fmtLatexMathEnv), // math env
-                 fmt 
+                 fmtLatexCmd,
+                 fmtLatexEscape,
+                 fmtLatexLink,
+                 fmtLatexFootnote,
+                 fmtLatexTable,
+                 fmtLatexEnv,
+                 fmtLatexCodePlain,
+                 fmtLatexCodeToken,
+                 fmtLatexLineInfo,
+                 fmtLatexCodeTable,
+                 fmtLatexMathCmd, // math cmd
+                 fmtLatexMathEnv, // math env
+                 fmt
                )
 }
 
