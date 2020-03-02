@@ -10,12 +10,11 @@
 module main
 
 import std/path
-import std/regex 
+import std/regex
 import common
 import options
 import storage
 import driver
-import mathStaticRun
 import runLatex
 import version
 
@@ -59,7 +58,7 @@ public function test( s : string = "code_blocks", moreargs = "" ) {
   }
 }
 
-val runners = Runners( runLatex/runPdfLaTeX, runLatex/runBibtex, mathStaticRun/runMathStatic, runLatex/runZip )
+val runners = Runners( )
 
 public function markdownFiles(args : string, action : (string,string,string,options) -> io ()) : io () {
   val mbopts = parseOptions(version,args);

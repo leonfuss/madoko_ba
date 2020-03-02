@@ -23,17 +23,10 @@ import block    // for lineMap
 import storage
 import hilite
 import mathParse
-import mathStatic
 import texParser
 import includes
-import bibliography
 
-public struct runners(
-  runPdfLatex : ( srcFile : string, texFile : string, opts : options, content : string, continue : (int) -> io () ) -> io (),
-  runBibtex : ( bibFiles : list<string>, opts : options, continue : bool -> io ()) -> io (),
-  runMathStatic : runMathStaticFun,
-  runZip : ( files : list<string>, zipFile : string, opts : options, continue : bool -> io () ) -> io ()
-)
+public struct runners()
 
 val standardTexStyles = ["ellipse.sty","options.sty","longbox.sty","longfbox.sty","madoko2.sty"]
 
@@ -69,7 +62,7 @@ public function processContent( inName : string, outName : string, content : str
                           ("hours",date.hours.show2),("minutes",date.minutes.show2),("seconds",date.seconds.show2)] )
 
     // extract default cite-style if it exists
-    val opts2  = opts1.extractCitestyle(outName)
+    val opts2  = opts1
 
     val mmopts = if (opts2.xmp)
                   then opts2.parseMeta( FmtHtml, icontent.normalizeSource.extractFirstXmp ).fst
@@ -132,20 +125,6 @@ function process( inName : string, outName : string, searchDirs : list<string>,
                   redo : () -> io (),
                   continue : (string) -> io () ) : io ()
 {
-  function genTexZip(outTexName:string, refers:list<string>) {
-    if (mopts.texzip) {
-      createTexZip( inName, outTexName, refers, mopts, runners, fun(err) { () } )
-    }
-  }
-
-  function genPdf(outTexName:string, refers:list<string>) {
-    if (mopts.pdf) {
-      (runners.runPdfLatex)( inName, outTexName, mopts, content, fun(err) {
-        if (err==0) then genTexZip(outTexName, refers) else ()
-      })
-    }
-    else () // cannot zip without pdf
-  }
 
   function embedFiles( opts: options, files : list<string>, html0 : string ) : io (options,string) {
     if (files.length == 0) return (opts,html0);
@@ -199,142 +178,62 @@ function process( inName : string, outName : string, searchDirs : list<string>,
   function phaseHtml()
   {
     // markdown to html
-    val (fileEmbed,(mathLocations, (mathPlain,(mathFull,(warns0,(logs, (html0,_fullOptions,_,_))))))) =
+    val (fileEmbed,(mathLocations, (warns0,(_, (html0,_fullOptions,_,_))))) =
                               withLog("embed") {
                                 withLogCompress("math-locations") {
-                                 withLogCompress("math-plain") {
-                                  withLogCompress("math-full") {
                                    withLogCompress("warning") {
                                     withLogCompress("aux") {
                                      markdown(icontent,xopts0)
-                                   }}}}}}
+                                   }}}}
 
     // write math locations to file
     tryWriteTextFile(outName.appendStem("-math-locations").changeExt(".csv"), mathLocations)
 
-    // write an aux file
-    val bibChanged =
-      if (logs == "" || !logs.contains("\\citation{")) then []
-      else {
-        /*
-        if (mopts.bibStyle.extname != "" || mopts.bibStyle.dirname != "") {
-          // copy bst file
-          tryCopyTextFileFromTo( mopts.bibStyle.basename, mopts.bibStyle.dirname, outName.dirname )
-          ()
-        }
-        */
-        writeCitationsData( logs, outName, searchDirs, mopts.bib.splitPaths, mopts )
-      }
+    // do embedding
+    val (xopts,html) = embedFiles(xopts0,fileEmbed.split("\n").list,html0);
 
-    // run bibtex?
-    if (!bibChanged.isNil && firstTime && mopts.bibtex!="") {
-      if (mopts.bib.bool) {
-        genBibtex( runners.runBibtex, bibChanged, outName.dirname, searchDirs, mopts ) fun(err) {
-          redo()
-        }
-      }
-      else {
-        mopts.printErr("warning: found citations but no bibliography file is specified.\n Hint: specify 'Bibliography: <myfile>.bib' in the metadata.")
-        // mopts.printErr("citations:\n" + logs.indent(2), 2)
-        redo() // TODO: restructure to not call redo
+    // write html result
+    if (!(tryWriteTextFile(outName,html))) {
+      mopts.printErr("error: unable to write: " + outName)
+    }
+
+    // show warnings
+    val warns = fixWarnings(warns0)
+    if (warns != "") {
+      log("stdout",warns)
+      if (mopts.verbose >= 1) {
+        print(warns)
       }
     }
-    else {
-      // do embedding
-      val (xopts,html) = embedFiles(xopts0,fileEmbed.split("\n").list,html0);
 
-      // write html result
-      if (!(tryWriteTextFile(outName,html))) {
-        mopts.printErr("error: unable to write: " + outName)
-      }
-
-      // show warnings
-      val warns = fixWarnings(warns0)
-      if (warns != "") {
-        log("stdout",warns)
-        if (mopts.verbose >= 1) {
-          print(warns)
-        }
-      }
-
-      // generate tex
-      val outTexName = outName.changeExt(".tex")
-      val texRefers =
-        if (!mopts.tex) then [] else {
-          if (mopts.verbose >= 1) println("process: " + inName + " -> " + outTexName )
-          val (texwarns, (texFiles, (texRefer, tex)))
-                = withLog("texwarning", {
-                    withLog("files", {
-                      withLog("filesRefer", {
-                       markdown(icontent,xopts,FmtTex).fst
-                      })
+    // generate tex
+    val outTexName = outName.changeExt(".tex")
+    val texRefers =
+      if (!mopts.tex) then [] else {
+        if (mopts.verbose >= 1) println("process: " + inName + " -> " + outTexName )
+        val (texwarns, (texFiles, (texRefer, tex)))
+              = withLog("texwarning", {
+                  withLog("files", {
+                    withLog("filesRefer", {
+                     markdown(icontent,xopts,FmtTex).fst
                     })
                   })
-          if (texwarns != "") {
-            log("stdout",texwarns)
-            if (mopts.verbose>=1) {
-              print(texwarns)
-            }
+                })
+        if (texwarns != "") {
+          log("stdout",texwarns)
+          if (mopts.verbose>=1) {
+            print(texwarns)
           }
-          if (!(tryWriteTextFile(outTexName,tex))) {
-            mopts.printErr("error: unable to write: " + outTexName)
-          }
-          texFiles.split("\n").list + texRefer.split("\n").list
         }
-
-      // possibly typeset math using latex
-      if ((mathPlain.containsSnippet && mopts.math.mode.isStatic) || mathFull.containsSnippet) {
-        if (mopts.verbose>=2 && mopts.math.mode.isDynamic && mathFull.containsSnippet) {
-          mopts.print("warning: dynamic math mode but some math requires pdf",2)
+        if (!(tryWriteTextFile(outTexName,tex))) {
+          mopts.printErr("error: unable to write: " + outTexName)
         }
-        mathStatic( mathPlain, mathFull, inName, outName, mopts, content, runners.runMathStatic ) fun(mbmres) {
-          match(mbmres) {
-            Just((mdim2,svgdefs)) -> {
-              // write html again
-              mopts.print("re-aligning math in HTML.")
-
-              mopts.print("Writing out math definitions to svg file")
-              tryWriteTextFile(outName.changeExt(".svg"), svgdefs)
-
-              val html2 = markdown(icontent,xopts(math=(xopts.math)(dim=mdim2,svgDefs=svgdefs))).fst
-              if (!(tryWriteTextFile(outName,html2))) {
-                mopts.printErr("error: unable to write: " + outName)
-              }
-            }
-            Nothing -> ()
-          }
-          //if (mopts.verbose>=1) println("  done typesetting math.")
-          genPdf(outTexName,texRefers)
-        }
+        texFiles.split("\n").list + texRefer.split("\n").list
       }
-      else {
-        genPdf(outTexName,texRefers)
-      }
-
-      continue(html)
-    }
+    continue(html)
   }
 
   phaseHtml()
-}
-
-// Create a Tex zip
-function createTexZip( inName : string, outTexName : string, refers : list<string>, mopts : options, runners : runners, cont ) : io () {
-  val namesRefer = refers.map fun(fname) {
-    if (fname != "" && fname.relative && fname.extname != ".bib") {
-      val outName = combine(outTexName.dirname,fname).normalize
-      if (outName != fname) {
-        trace("refer: " + fname + " to " + outName)
-        mkdirp(outName.dirname)
-        copyFile(fname,outName)
-        Just(outName)
-      }
-      else Nothing
-    }
-    else Nothing
-  }
-  val names = [outTexName,outTexName.changeExt(".pdf")] + standardTexStyles + namesRefer.concatMaybe + [outTexName.changeExt(".bbl")]
-  (runners.runZip)( names, outTexName.changeExt(".zip"), mopts, cont )
 }
 
 // Fixup locations in warnings:
