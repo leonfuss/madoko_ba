@@ -70,15 +70,6 @@ task("madoko", [], function(cs) {
   jake.logger.log("> " + cmd);
   jake.exec(cmd, {interactive: true}, function() {
     jake.cpR(path.join(sourceDir,"cli.js"), outputDir);
-    ["monarch/monarch.js",
-     "csl/bibtex-parse.js",
-     "csl/sax.js",
-     "csl/locales.js",
-     "csl/citeproc.js","csl/csl-json.js",
-     "csl/csl-bibtex.js","csl/csl-madoko.js",
-    ].forEach( function(contrib) {
-      jake.cpR(path.join(contribDir,contrib), outputDir);
-    });
     complete();
   })
 },{async:true});
@@ -143,7 +134,7 @@ task("web", [], function() {
 },{async:true})
 
 //-----------------------------------------------------
-// Tasks: api 
+// Tasks: api
 //-----------------------------------------------------
 desc("build madoko api")
 task("api", [], function() {
@@ -155,64 +146,6 @@ task("api", [], function() {
     complete();
   });
 },{async:true})
-
-var localTexDir = "c:/texlive/texmf-local/tex/latex/local";
-desc("setup web");
-task("justcopy", [], function() {
-  // copy all madoko sources
-  var js = new jake.FileList().include(path.join(outputDir,"*.js"));
-  copyFiles(outputDir,js.toArray(),path.join(webclient,"lib"));
-
-  // copy style, language, and image files
-  jake.mkdirP(path.join(webclient,path.join(styleDir,"lang")));
-  jake.mkdirP(path.join(webclient,path.join(styleDir,"images")));
-  jake.mkdirP(path.join(webclient,path.join(styleDir,"csl")));
-  jake.mkdirP(path.join(webclient,path.join(styleDir,"locales")));
-  jake.mkdirP(path.join(webclient,path.join(styleDir,"scripts")));
-  var js = new jake.FileList().include(path.join(styleDir,"*.css"))
-                              .include(path.join(styleDir,"*.mdk"))
-                              .include(path.join(styleDir,"lang","*.json"))
-                              .include(path.join(styleDir,"csl","*.csl"))
-                              .include(path.join(styleDir,"locales","*.xml"))
-                              .include(path.join(styleDir,"scripts","*.js"));
-  copyFiles(styleDir,js.toArray(),path.join(webclient,styleDir));
-
-  js     = new jake.FileList().include(path.join(contribDir,"styles","*.css"))
-                              .include(path.join(contribDir,"styles","*.mdk"))
-                              .include(path.join(contribDir,"styles","*.bib"))
-                              .include(path.join(contribDir,"styles","*.cls"));
-  copyFiles(path.join(contribDir,"styles"),js.toArray(),path.join(webclient,styleDir));
-
-  js     = new jake.FileList().include(path.join(contribDir,"images","*.png"))
-                              .include(path.join(contribDir,"images","*.pdf"));
-  copyFiles(contribDir,js.toArray(),path.join(webclient,styleDir));
-
-  jake.mkdirP(path.join(webclient,"templates","style"));
-  var templateDir = path.join(contribDir,"templates");
-  js     = new jake.FileList().include(path.join(templateDir,"*"))
-                              .include(path.join(templateDir,"style","*"));
-  copyFiles(templateDir,js.toArray(),path.join(webclient,"templates"));
-
-  // spell checks
-  jake.mkdirP(path.join(webclient,"dictionaries","en_US"));
-  js = new jake.FileList().include(path.join(contribDir,"dictionaries","en_US","*"));
-  copyFiles(contribDir,js.toArray(),webclient);
-
-  // wcwidth
-  js = new jake.FileList().include(path.join(contribDir,"wcwidth","*"));
-  copyFiles(path.join(contribDir,"wcwidth"),js.toArray(),path.join(webclient,"lib","wcwidth"));
-
-  js = new jake.FileList().include(path.join(contribDir,"typo","*"));
-  copyFiles(path.join(contribDir,"typo"),js.toArray(),path.join(webclient,"lib","typo"));
-
-  // copy sty files to local texmf tree
-  var sty = new jake.FileList().include(path.join(styleDir,"*.sty"));
-  // copyFiles(styleDir,sty.toArray(),localTexDir);
-  copyFiles(styleDir,sty.toArray(),path.join(webclient,styleDir))
-});
-
-task("webcopy",["web","justcopy"], function() {
-});
 
 //-----------------------------------------------------
 // Tasks: test
@@ -226,17 +159,6 @@ task("test", ["madoko"], function() {
   jake.exec(testCmd, {printStdout: true, printStderr: true})
 });
 
-//-----------------------------------------------------
-// Tasks: bench
-//-----------------------------------------------------
-desc("run benchmark.\n  bench[--quick]   # run the bench mark in quick mode.");
-task("bench", [], function() {
-  testFlags=(process.env.testFlags||"")
-  args = Array.prototype.slice.call(arguments)
-  testCmd = "node test --bench --gfm " + testFlags + args.join(" ")
-  jake.log("> " + testCmd)
-  jake.exec(testCmd,{interactive:true})
-});
 
 //-----------------------------------------------------
 // Tasks: doc
@@ -325,38 +247,6 @@ task("sourcedoc", [], function(mode) {
     });
   });
 }, {async:true});
-
-
-desc(["install Sublime Text 2 support files.",
-     "     sublime[<version>]  # install for <version> instead (2 or 3)."].join("\n")
-    );
-task("sublime", function(sversion) {
-  jake.logger.log("install Sublime Text support");
-  var sublime =　"";
-  var sversion = sversion || "2"
-  if (process.env.APPDATA) {
-    sublime = path.join(process.env.APPDATA,"Sublime Text " + sversion);
-  }
-  else if (process.env.HOME) {
-    if (path.platform === "darwin")
-      sublime = path.join(process.env.HOME,"Library","Application Support","Sublime Text " + sversion);
-    else
-      sublime = path.join(process.env.HOME,".config","sublime-text-" + sversion);
-  }
-  sublime = path.join(sublime,"Packages");
-
-  if (!fileExist(sublime)) {
-    jake.logger.error("error: cannot find sublime package directory: " + sublime);
-  }
-  else {
-    var dirCS = "Color Scheme - Default";
-    var sublimeCS = path.join(sublime,dirCS);
-
-    jake.mkdirP(sublimeCS);
-    jake.cpR(path.join("support","sublime-text","Snow.tmTheme"),sublimeCS);
-    jake.cpR(path.join("support","sublime-text","madoko"),sublime);
-  }
-});
 
 
 //-----------------------------------------------------
