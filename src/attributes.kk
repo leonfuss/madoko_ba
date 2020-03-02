@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013 Daan Leijen, Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -30,7 +30,7 @@ abstract struct rules(
   rules: list<(pattern,string)>
 )
 
-private struct pattern( 
+private struct pattern(
   elem: string,
   name: string,
   classes: list<string>,
@@ -39,17 +39,17 @@ private struct pattern(
 )
 
 function show( p : pattern ) {
-  "~" + p.elem + "#" + p.name + "." +  p.classes.join(".") + 
+  "~" + p.elem + "#" + p.name + "." +  p.classes.join(".") +
    p.attrselectors.map(fun(e) { "[" + e.expression/show + "]" }).join
 }
 
-function makePattern( elem : string = "", name : string = "", 
-                      classes : list<string> = [], 
+function makePattern( elem : string = "", name : string = "",
+                      classes : list<string> = [],
                       attrselectors : list<expr> = [],
                       weight : int = ~1) {
-  val clss = classes.filter( fun(s) { !s.isEmpty }) 
+  val clss = classes.filter( fun(s) { !s.isEmpty })
   // calculate weight according to CSS rules: in order of importance: name, classes, elements
-  val w = if (weight >= 0) then weight 
+  val w = if (weight >= 0) then weight
            else (100*(if (name.isEmpty) then 0 else 1) + 10*clss.length + (if (elem.isEmpty) then 0 else 1))
   Pattern(elem.definitionId, name.definitionId, clss, attrselectors, w)
 }
@@ -80,7 +80,7 @@ public function rulesFromMeta( metadata : list<(string,string)> ) : rules {
 }
 val rxPattern = regex(@"^(?:~([\w\-:]+))?(?:#([\w\-:]+))?((?:\.(?:[\w\-:]+))*)(?:(\[[^\]]*\])*)$")
 
-public function matchRules( r : rules, elementName : string, attrs : attrs ) : attrs 
+public function matchRules( r : rules, elementName : string, attrs : attrs ) : attrs
 {
   if (!(attrs.common/defaults)) return attrs;
   val name = attrs.name.definitionId
@@ -94,7 +94,7 @@ function apply( rules : list<(pattern,string)>, attrs : attrs, name : string, el
     Succ(p1) -> {
       val (def,rules2) = rules.getMatches( attrs, name, elemName )
       if (def=="") return attrs
-      val attrs2 = attrs.mergeDefault(def.parseAttrs)      
+      val attrs2 = attrs.mergeDefault(def.parseAttrs)
       rules2.apply( attrs2, name, elemName, p1 )
     }
   }
@@ -138,12 +138,12 @@ function matchSelector( e : expr, attrs : attrs ) : bool {
   function lookup(v,display) {
     String(expandKeyPattern(v,attrs))
   }
-  catch { 
-    evalExpr(e,lookup).bool 
-  } 
-  fun(exn) { 
+  catch {
+    evalExpr(e,lookup).bool
+  }
+  fun(exn) {
     warning(exn.show)
-    False 
+    False
   }
 }
 
@@ -155,45 +155,15 @@ function filterx( xs : list<a>, pred : a -> e bool ) : e list<a>
   }
 }
 
-
-/*
-public function matchRules( rules : rules, elementName : string, attrs : attrs ) : attrs 
-{
-  if (!(attrs.common/defaults)) return attrs;
-  val extra = ["#" + attrs.name.definitionId, "~" + elementName.definitionId]
-  applyRules(peano10, rules.values, attrs, rules.values.getMatches(attrs,dict(),extra) );
-}
-
-function applyRules(p : peano, defaults : dict<string>, attrs : attrs, dv : (string,dict<bool>) ) : attrs {
-  match(p) {
-    Zero -> attrs
-    Succ(s) -> {
-      val (def,visited) = dv
-      if (def=="") return attrs
-      val attrs2 = attrs.mergeDefault(def.parseAttrs)      
-      applyRules( s, defaults, attrs2, defaults.getMatches(attrs2,visited) )
-    }
-  }
-}
-
-function getMatches( defaults: dict<string>, attrs : attrs, visited : dict<bool> = dict(), extra : list<string> = [] ) : (string, dict<bool>) {
-  val keys0 = extra + attrs.classes.map( fun(cname) { "." + cname.definitionId } ) 
-  val keys1 = keys0.filter( fun(key) { visited[key].isNothing } )
-  val visited1 = visited + keys1.map( fun(key) { (key,True) } ).dict
-  val def = keys1.map( fun(key) { defaults[key] }).filter(isJust).map(mbstring).join(" ; ")
-  return (def,visited1)
-}
-*/
-
-public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string ) : attrs 
+public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string ) : attrs
 {
   if (attrsStr=="" && source=="") then return attrs0
-  val attrsx = attrs0(empty=False, sticky=False, source=source, 
+  val attrsx = attrs0(empty=False, sticky=False, source=source,
                       text=attrs0.text + " ; " + attrsStr,
                       classes=[])
 
   val kvs = attrsStr.joinLines.parseAttributes  // join lines here.
-  
+
   val attrs = kvs.foldl(attrsx) fun(acc:attrs,kv:(string,string,string)) {
     val (name,kwvalue,value) = kv
     val start = name.substr(0,1)
@@ -216,23 +186,23 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
         acc(replacers = [])
       }
       else {
-        acc(keyvals = acc.keyvals.filter( fun(k) { k.fst != name }))  
+        acc(keyvals = acc.keyvals.filter( fun(k) { k.fst != name }))
       }
     }
     elif (name=="clear") {
       Attrs(text=attrsx.text,defaults=False)
     }
     elif (name=="-" || name=="clearnum" || name==".clearnum") {
-      acc( counters=[], label="", replacers=[], 
+      acc( counters=[], label="", replacers=[],
            classes=["clearnum"] + acc.classes.filter(fun(nm) { nm != "clearnum" }) )
     }
     elif (start=="#") {
       //trace("attrs name: " + name + ": " + value.show)
       acc(name = name.substr(1).definitionId, label = if (value!="") then value else acc.label)
-    }  
+    }
     elif (start==".") {
       val cname = name.substr(1)
-      if (acc.classes.any( fun(nm) { nm == cname } )) 
+      if (acc.classes.any( fun(nm) { nm == cname } ))
        then acc else acc(classes = acc.classes + [cname])
     }
     elif (start=="@") {
@@ -255,7 +225,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
     }
     elif (name=="class") {
       val cname = value.definitionId
-      if (acc.classes.any( fun(nm) { nm == cname } )) 
+      if (acc.classes.any( fun(nm) { nm == cname } ))
        then acc else acc( classes = acc.classes + [cname] )
     }
     elif (name=="label") {
@@ -281,7 +251,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
     }
     elif (name=="replace") {
       acc(replacers = acc.replacers + [value])
-    }    
+    }
     elif (name=="before") {
       acc(replacers = acc.replacers + [value + @"\/&source;"])
     }
@@ -306,7 +276,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
               else {
                 warning( "unrecognized input value: " + value)
                 Markdown()
-              }         
+              }
       acc(input=r)
     }
     elif (name=="tight") {
@@ -315,12 +285,12 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
     else {
       //trace("key " + name + "=" + value)
       val cntrs = if (name=="start") then match (value.trim.parseInt) {
-                    Just(i) -> acc.counters + [(acc.elem + "-li",(i-1).show)] 
+                    Just(i) -> acc.counters + [(acc.elem + "-li",(i-1).show)]
                     Nothing -> acc.counters
                   }
                   elif (name=="list-style-type" && acc.elem.bool) then {
                     //trace("list-style-type: @" + acc.elem + "-li=" + value.trim )
-                    acc.counters + [(acc.elem + "-li",value.trim)] 
+                    acc.counters + [(acc.elem + "-li",value.trim)]
                   }
                   else acc.counters
       val extra = [parsePageAlign(name,kwvalue)].concat
@@ -330,7 +300,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
   attrs.addClasses(attrs0.classes) // last, so the classes are order for 'elementName'
 }
 
-val rxId      = @"(?:[\.#][\w\.#@\-:]*|[@\-\w][\w\.#@\-]*)" 
+val rxId      = @"(?:[\.#][\w\.#@\-:]*|[@\-\w][\w\.#@\-]*)"
 val rxQuoted  = @"(?:'(?:[^\n\\']|\\[\s\S])*'|""(?:[^\n\\""]|\\[\s\S])*"")"
 val rxHtmlValue = @"(?:" + rxQuoted + "|" + @"(?:[^\\""'\s]|\\.)*)"
 val rxCssValue  = @"(?:" + rxQuoted + "|" + @"(?:&(?:#[xX]?)?[\w\-]+;|[^\\""'\s;,]|\\.)*)"
@@ -353,16 +323,16 @@ function parsePageAlign( name :string, value: string ) : list<(string,string)> {
                   elif (value=="forcehere") then "h!"
                   elif (value=="inplace") then "H"
                   else ""
-  [("tex-float-placement",placement)]                    
+  [("tex-float-placement",placement)]
 }
 
 
 // Parse an attribute string
 val parseAttributes : (string) -> list<(string,string,string)> = smemo(parseAttributesX)
 
-function parseAttributesX( s : string ) : list<(string,string,string)> 
+function parseAttributesX( s : string ) : list<(string,string,string)>
 {
-  val res = parseAttributesAcc( s, s, [] )  
+  val res = parseAttributesAcc( s, s, [] )
   /*
   trace("attributes: " + s + "\n parsed: " + res.map(fun(kvv) {
       val (key,_kwvalue,value) = kvv
@@ -397,8 +367,8 @@ function parseAttributesAcc( original : string, s : string, acc : list<(string,s
       val value   = values.filter(legalValue).map(unquote).join(" ") // TODO: we should not unquote here but only as needed!
       val kwvalue = if (values.length==1 && !(value.startsWith("\"") || value.startsWith("'")))
                      then value else ""
-      val res     = (cap.groups[1].toLower,kwvalue,value)                     
-      parseAttributesAcc( original, s.substr1(cap.next), Cons(res,acc))                     
+      val res     = (cap.groups[1].toLower,kwvalue,value)
+      parseAttributesAcc( original, s.substr1(cap.next), Cons(res,acc))
     }
   }
 }
@@ -416,23 +386,23 @@ function toBool( s : string ) : bool {
   (s=="" || s=="true")
 }
 
-public function transformText( attrs : attrs, txt : string, labels : dict<label>, metadata : dict<string> ) : string 
-{  
+public function transformText( attrs : attrs, txt : string, labels : dict<label>, metadata : dict<string> ) : string
+{
   if (attrs.empty) then return txt
   attrs.replacers.foldl(txt,fun(cur,repl) {
-    val res = repl.applyReplacer(cur,attrs,labels,metadata) 
+    val res = repl.applyReplacer(cur,attrs,labels,metadata)
     //trace("replacer '" + erepl.substr(0,10) + "': " + cur + " -> " + res)
     res
   })
 }
 
-function applyReplacer( repl : string, txt : string, attrs : attrs, labels : dict<label>, metadata : dict<string> ) : string 
+function applyReplacer( repl : string, txt : string, attrs : attrs, labels : dict<label>, metadata : dict<string> ) : string
 {
-  function expand( s : string ) { 
-    expandKeys(peanoN,s,txt,attrs,labels,metadata,fun(_,_) {""}) 
+  function expand( s : string ) {
+    expandKeys(peanoN,s,txt,attrs,labels,metadata,fun(_,_) {""})
   }
 
-  function checkReplace( rrepl : string ) : string {    
+  function checkReplace( rrepl : string ) : string {
     match(rrepl.find(rxregex)) {
       Nothing -> match(rrepl.find(rxmapping)) {
         Nothing -> rrepl.expand
@@ -452,7 +422,7 @@ function applyReplacer( repl : string, txt : string, attrs : attrs, labels : dic
       else match (evalCondition(crepl,txt,attrs,labels,metadata)) {
         Null -> txt // missing 'else' -> no replace
         c    -> checkReplace(c.string)
-      } 
+      }
   }
 
   checkCond(repl)
@@ -486,7 +456,7 @@ val rxBar        = regex(@"//")
 val rxExcludeBar = regex(@"[^\\/]|\\.|/(?!/)")
 
 // perform a mapping.
-function regexMapping( mapping : string, flags : string, txt : string ) : string 
+function regexMapping( mapping : string, flags : string, txt : string ) : string
 {
   val entries
     = mapping.splitExclude(rxBar,rxExcludeBar).map( fun(entry) {
@@ -495,7 +465,7 @@ function regexMapping( mapping : string, flags : string, txt : string ) : string
             (ecap.groups[1],ecap.groups[2])
           }
           Nothing -> {
-            warning("illegal mapping: " + entry)  
+            warning("illegal mapping: " + entry)
             (entry,"")
           }
         }
@@ -511,7 +481,7 @@ function regexMapping( mapping : string, flags : string, txt : string ) : string
       Nil -> cap.matched // should never happen
       Cons(entry) -> {
         val (rx,repl) = entry
-        match(cap.matched.find(regex(rx))) // should always match from start to end... 
+        match(cap.matched.find(regex(rx))) // should always match from start to end...
         {
           Nothing -> cap.matched // should never happen
           Just(rcap) -> {
@@ -521,7 +491,7 @@ function regexMapping( mapping : string, flags : string, txt : string ) : string
                 val j = gcap.groups[1].parseInt.maybe(0,id)
                 if (convCase)
                  then rcap.groups[j].replaceAll(rxCaseEsc,@"\\$2$1") // escape replacement
-                 else rcap.groups[j]  
+                 else rcap.groups[j]
               }
               else {
                 gcap.groups[1]
@@ -535,9 +505,9 @@ function regexMapping( mapping : string, flags : string, txt : string ) : string
      then subst.caseConvert // unescape replacement
      else subst
   }
-  
-  val gtxt = if (flags.contains("g")) 
-              then txt.replaceAll(rexp,replaceGroups) 
+
+  val gtxt = if (flags.contains("g"))
+              then txt.replaceAll(rexp,replaceGroups)
               else txt.replace(rexp,replaceGroups)
   gtxt
 }
@@ -545,7 +515,7 @@ function regexMapping( mapping : string, flags : string, txt : string ) : string
 // "?#caption?/././"
 // val rxcond  = regex(@"^/[?](" + rxescaped + @"+)/(" + rxescaped + @"*)/([gim]*)$")
 
-function regexReplacer( rxText : string, rtxt : string, flags : string, txt : string ) 
+function regexReplacer( rxText : string, rtxt : string, flags : string, txt : string )
 {
   val rexp = regex(rxText, ignoreCase=flags.contains("i"), multiline=flags.contains("m"))
   val convCase = flags.contains("c")
@@ -554,9 +524,9 @@ function regexReplacer( rxText : string, rtxt : string, flags : string, txt : st
     val repl = rtxt.replaceAll( rxCaptureGroup, fun(gcap) {
       if (gcap.groups[1] != "\\") {
         val i = gcap.groups[1].parseInt.maybe(0,id)
-        if (convCase) 
+        if (convCase)
          then cap.groups[i].replaceAll( rxCaseEsc, @"\\$2$1" ) // escape replacement
-         else cap.groups[i]   
+         else cap.groups[i]
       }
       else {
         gcap.groups[1]
@@ -565,11 +535,11 @@ function regexReplacer( rxText : string, rtxt : string, flags : string, txt : st
     if (convCase)
      then repl.caseConvert  // do case conversion (and unescape replacements)
      else repl
-  }  
-  val gtxt = if (flags.contains("g")) 
-              then txt.replaceAll(rexp,replaceGroups) 
+  }
+  val gtxt = if (flags.contains("g"))
+              then txt.replaceAll(rexp,replaceGroups)
               else txt.replace(rexp,replaceGroups)
-  //trace("replace (" + rxText.substr(0,20) + "): '" + txt + "' to '" + gtxt + "'")    
+  //trace("replace (" + rxText.substr(0,20) + "): '" + txt + "' to '" + gtxt + "'")
   gtxt
 }
 
@@ -583,65 +553,65 @@ function caseConvert( txt : string ) : string {
       cap.groups[1] // unescape
     }
     elif (cap.groups.matchedOn(2)) {
-      if (cap.groups[2]=="u") then cap.groups[3].toUpper else cap.groups[3].toLower      
+      if (cap.groups[2]=="u") then cap.groups[3].toUpper else cap.groups[3].toLower
     }
     elif (cap.groups.matchedOn(4)) {
-      if (cap.groups[4]=="U") then cap.groups[5].toUpper else cap.groups[5].toLower      
+      if (cap.groups[4]=="U") then cap.groups[5].toUpper else cap.groups[5].toLower
     }
     else cap.matched
-  }) 
+  })
 }
 
 
 public function expand( attrs : attrs, metadata : dict<string>, labels : dict<label> = dict() ) : attrs {
-  if (attrs.empty) return attrs 
+  if (attrs.empty) return attrs
 
   attrs( keyvals = attrs.keyvals.map fun(kv) {
     (kv.fst, kv.snd.expandKeys( attrs.source, attrs, labels, metadata ))
   })
 }
 
-public function expandKeys( txt : string, metadata : dict<string> ) : string {  
+public function expandKeys( txt : string, metadata : dict<string> ) : string {
   expandKeys(peanoN,txt,"",attrsNone,dict(),metadata)
 }
 
-public function expandKeyName( name : string, labels : dict<label>, metadata : dict<string> ) : string {  
+public function expandKeyName( name : string, labels : dict<label>, metadata : dict<string> ) : string {
   expandKeys(peanoN,"&" + name + ";","",attrsNone,labels,metadata)
 }
 
-public function expandKeys( txt : string, source : string, 
-                            attrs : attrs, 
+public function expandKeys( txt : string, source : string,
+                            attrs : attrs,
                             labels : dict<label>, metadata : dict<string> ) : string {
   expandKeys(peanoN,txt,source,attrs,labels,metadata)
 }
 
 function expandKeyPattern( name : string, attrs : attrs ) : string {
   expandKeys(peanoN,"&" + name + ";",attrs.source,attrs,dict(), dict(), ignoreNotFound)
-} 
+}
 
 // expand keys in a string
-private function expandKeys( p0 : peano, txt : string, source : string, 
-                            attrs : attrs, 
-                            labels : dict<label>, metadata : dict<string>, 
-                            notFound : (string,string) -> string = keyNotFound ) : string 
-{  
+private function expandKeys( p0 : peano, txt : string, source : string,
+                            attrs : attrs,
+                            labels : dict<label>, metadata : dict<string>,
+                            notFound : (string,string) -> string = keyNotFound ) : string
+{
   if (txt=="") then return txt
   match(p0) {
     Zero -> txt
     Succ(p) -> {
       txt.replaceAll(rxkey) fun(cap) {
         val rawkey = cap.groups[1]
-        val key = rawkey.normalizeId 
+        val key = rawkey.normalizeId
         if (rawkey=="") then cap.matched  // no key was matched
         elif (rawkey=="&") then "&"       // special in replacements
         elif (key=="label" && !(attrs.empty)) then attrs.label
-        elif (key=="id" && !(attrs.empty)) then attrs.name 
-        elif (key=="class" && !(attrs.empty)) then attrs.classes.join(" ") 
-        elif (key=="source" && !(attrs.empty)) then source // attrs.source 
+        elif (key=="id" && !(attrs.empty)) then attrs.name
+        elif (key=="class" && !(attrs.empty)) then attrs.classes.join(" ")
+        elif (key=="source" && !(attrs.empty)) then source // attrs.source
         else match (attrs.keyvals.find(fun(kv){ kv.fst == key })) {
           Just(kv) -> {
             if (txt == kv.snd) then kv.snd
-             else expandKeys(p,kv.snd,source,attrs,dict(),metadata,notFound)                
+             else expandKeys(p,kv.snd,source,attrs,dict(),metadata,notFound)
           }
           Nothing  -> match(labels[key]) {
             Just(label) -> label.labelText // already expanded
@@ -650,7 +620,7 @@ private function expandKeys( p0 : peano, txt : string, source : string,
                 // semi-static scoping: clear out labels, but keep attributes
                 expandKeys(p,value,source,attrs,dict(),metadata,notFound)
                 // todo? full static scoping: clear out attributes and labels..
-                //expandKeys(p,value,"",attrsNone,dict(),metadata,notFound)              
+                //expandKeys(p,value,"",attrsNone,dict(),metadata,notFound)
               }
               Nothing -> match(entityNameAsNum(rawkey)) {
                 Just(value) -> value
@@ -660,11 +630,11 @@ private function expandKeys( p0 : peano, txt : string, source : string,
             }
           }
         }
-      }      
+      }
     }
   }
 }
-val rxkey = regex(@"\\&|(?:\\/)?&([\w\-:]*|&);(\\/)?") 
+val rxkey = regex(@"\\&|(?:\\/)?&([\w\-:]*|&);(\\/)?")
 
 function keyNotFound( key: string, matched : string ) : string {
   warning( "undefined key: " + key)
@@ -679,4 +649,3 @@ function ignoreNotFound( key: string, matched : string ) : string {
 external smemo( f : (string) -> e a ) : (string -> e a) {
   js inline "((function(){ var dict={}; return (function(s) { if (dict[s]===undefined) dict[s] = (#1)(s); return dict[s]; }); })())"
 }
-

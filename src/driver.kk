@@ -52,7 +52,7 @@ public function processContent( inName : string, outName : string, content : str
     // set up options
 
     val date   = now()
-    val opts1  = opts0(lineMap=lmap,
+    val xopts  = opts0(lineMap=lmap,
                        processTimeout=if (opts0.sandbox) then 120000 else opts0.processTimeout,
                        metadata=opts0.metadata
                        + [("docname",inName.stemname),("filename",inName)]
@@ -61,38 +61,25 @@ public function processContent( inName : string, outName : string, content : str
                           ("year",date.year.show),("month",date.month.show2),("day",date.day.show2),
                           ("hours",date.hours.show2),("minutes",date.minutes.show2),("seconds",date.seconds.show2)] )
 
-    // extract default cite-style if it exists
-    val opts2  = opts1
-
-    val mmopts = if (opts2.xmp)
-                  then opts2.parseMeta( FmtHtml, icontent.normalizeSource.extractFirstXmp ).fst
-                  else opts2.parseMeta( FmtHtml, icontent.normalizeSource ).fst  // get bibdata,bibstyle,mathimg
-
-    // always read dims: even in dynamic mode some pdf math may exist
-    val dims = if (mmopts.rebuild) then "" else outName.changeExt(".dimx").readTextFileDef("",False)
-    // parseMathDim also generates the svgdefs which are included at the bottom
-    // of the generated HTML page
-    val (mdim,svgdefs,_) = dims.parseMathDim(mmopts.math)
-
-    val xopts  = opts2(math=(opts2.math)(dim=mdim,svgDefs=svgdefs))
-    val mopts  = mmopts(math=(mmopts.math)(dim=mdim,svgDefs=svgdefs))
+    val mopts = if (xopts.xmp)
+                  then xopts.parseMeta( FmtHtml, icontent.normalizeSource.extractFirstXmp ).fst
+                  else xopts.parseMeta( FmtHtml, icontent.normalizeSource ).fst  // get bibdata,bibstyle,mathimg
 
     // register languages for highlighting
     registerColorizers(mopts, searchDirs, icontent);
 
     // copy early since async latex may start for math
-    if (mopts.copyStyles) { // && !(xopts.sandbox) // allow even in sandbox
-      // if (mopts.embedLimit < 16*1024) {  // only copy standard css style if it will not be embedded
+    if (mopts.copyStyles) {
       tryCopyTextFileFromNoSandboxTo( "madoko.css", styleDir, outName.dirname )
-      // }
-      if (xopts.tex || mopts.math.mode.isStatic) { // only copy style files if generating tex or if math is static
+      // only copy style files if generating tex or if math is static
+      if (xopts.tex || mopts.math.mode.isStatic) {
         val isTex2  = match(mopts.metadata.find( fun(md) { md.fst == "tex2" } )) {
                         Just(md) -> md.snd.toLower == "true"
                         _ -> False
                       }
         val files = if (isTex2)
                      then standardTexStyles
-                     else ["css.sty","madoko.sty"]
+                     else ["css.sty", "madoko.sty"]
         files.foreach fun(fname) {
           tryCopyTextFileFromNoSandboxTo(fname, styleDir, outName.dirname )
         }
@@ -178,16 +165,12 @@ function process( inName : string, outName : string, searchDirs : list<string>,
   function phaseHtml()
   {
     // markdown to html
-    val (fileEmbed,(mathLocations, (warns0,(_, (html0,_fullOptions,_,_))))) =
-                              withLog("embed") {
-                                withLogCompress("math-locations") {
-                                   withLogCompress("warning") {
-                                    withLogCompress("aux") {
-                                     markdown(icontent,xopts0)
-                                   }}}}
-
-    // write math locations to file
-    tryWriteTextFile(outName.appendStem("-math-locations").changeExt(".csv"), mathLocations)
+    val (fileEmbed, (warns0,(_, (html0,_fullOptions,_,_)))) =
+        withLog("embed") {
+         withLogCompress("warning") {
+          withLogCompress("aux") {
+           markdown(icontent,xopts0)
+         }}}
 
     // do embedding
     val (xopts,html) = embedFiles(xopts0,fileEmbed.split("\n").list,html0);
