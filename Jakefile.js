@@ -94,17 +94,13 @@ task("config", [], function () {
   }
 },{async:true});
 
-desc("install local styles");
-task("copystyles", [], function() {
-  // copy locales
-  jake.mkdirP(path.join(styleDir,"locales"));
-  var js = new jake.FileList().include(path.join(contribDir,"csl/locales/*.xml"));
-  copyFiles(path.join(contribDir,"csl"),js.toArray(),styleDir);
-  // copy CSL styles
-  jake.mkdirP(path.join(styleDir,"csl"));
-  var js = new jake.FileList().include(path.join(contribDir,"csl/csl/*.csl"));
-  copyFiles(path.join(contribDir,"csl"),js.toArray(),styleDir);
-});
+desc("publish madoko locally with npm");
+task("publish", [], function(mainmod) {
+  mainmod = mainmod || maincli
+  var cmd = "pushd lib; npm link; popd"
+  jake.logger.log("> " + cmd);
+  jake.exec(cmd, {interactive: true}, function() { complete(); })
+},{async:true});
 
 
 //-----------------------------------------------------
@@ -175,7 +171,6 @@ function getVersion() {
   }
   return "<unknown>"
 }
-
 
 function fixVersion(fname) {
   fname = fname || path.join(sourceDir,"version.kk");
