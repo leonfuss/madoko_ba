@@ -42,7 +42,7 @@ public struct options(
   texDocHeader: string= "",   // literal tex header after begin{document}
   texDocHeaderx: string= "",  // literal tex header after begin{document} in non-math mode only
   texFooter: string= "",   // literal tex footer
-  texSectionNum: bool = False, // use tex section numbering
+  texSectionNum: bool = True, // use tex section numbering
 
   bib      : string = "",  // bibliography definition files (.bib)
 
