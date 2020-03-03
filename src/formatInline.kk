@@ -139,18 +139,10 @@ public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : strin
   val class  = "math-" + lkind
   val attrsd = context.applyDefaults("span",attrs.addClass(class))
 
-  //ptxt = if (attrs.hasClass("mathpre")) then mathPre(txt) else txt
   val txt    = txt0.trimLines
-  val texcmd = if (kind=="Inline")
-                then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
-                else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)
-  match(context.fmt) {
-    FmtTex -> texcmd
-    _      -> {
-      val mtxt = left + txt.escapeMath(context.fmt) + right
-      context.fmtCmd("span",context.fmtText(mtxt),attrsd)
-    }
-  }
+  if (kind=="Inline")
+    then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
+    else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)
 }
 
 function logMathLocation(digest: string, attrs: attrs) {
@@ -308,7 +300,7 @@ public function fmtCode( context : inlineContext, env0 : string, txt : string, a
 
   if (env=="code")
    then context.fmtCmd("code", content, pattrs.mergeDefault(cattrs))
-   else context.fmtEnv(env, context.fmtCmd( if (context.fmt==FmtTex) then "precode" else "code", content, cattrs), pattrs)
+   else context.fmtEnv(env, context.fmtCmd("precode", content, cattrs), pattrs)
 }
 
 val rxEndSpaces = regex(@"  +$",multiline=True)
@@ -638,16 +630,9 @@ public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs =
   val class  = "math-" + lkind
   val attrsd = context.applyDefaults("span",attrs.addClass(class))
 
-  val texcmd = if (kind=="Inline")
-                then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
-                else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)
-  match(context.fmt) {
-    FmtTex -> texcmd
-    _      -> {
-      val mtxt = left + txt.escapeMath(context.fmt) + right
-      context.fmtCmd("span",context.fmtText(mtxt),attrsd)
-    }
-  }
+  if (kind=="Inline")
+    then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
+    else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)
 }
 
 function mathUnline( txt : string ) {

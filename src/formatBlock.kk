@@ -168,12 +168,7 @@ public function formatBlock( context : formatContext, block : block ) : div stri
       formatInline(context.inlineContext, txt, attrs)
     }
 
-    Blank -> {
-      match(context.fmt) {
-        FmtTex -> ""
-        _      -> "\n"
-      }
-    }
+    Blank -> ""
 
     Code(txt,_,attrs) -> {
       attrs.logDataLine
@@ -219,10 +214,7 @@ public function formatBlock( context : formatContext, block : block ) : div stri
         MathDefs  -> {
           val lineInfo = getLineInfo(parentAttrs)
           val mtxt = txt.escapeMath(context.fmt)
-          match(context.fmt) {
-            FmtTex  -> lineInfo + mtxt
-            FmtHtml -> "\\[" + mtxt + "\\]"
-          }
+          lineInfo + mtxt
         }
         Markdown  -> context.inlineContext.formatInline(txt,parentAttrs)
         Raw(monly)-> {
