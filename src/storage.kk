@@ -47,9 +47,9 @@ public function checkSandbox( path : string ) : io string {
   }
 }
 
-function under( path : string, roots : list<string> ) : bool {  
+function under( path : string, roots : list<string> ) : bool {
   roots.any fun(root) {
-    if (root.isEmpty) 
+    if (root.isEmpty)
      then path.contains(rxRootRelative)
      else path.startsWith(root + "/") && path.substr(root.length+1).contains(rxRootRelative)
   }
@@ -109,9 +109,9 @@ public function readTextFileDef( fileName : string, def : string, required : boo
 }
 
 // Try to a text file synchronously (using UTF8 encoding)
-public function tryReadTextFile( fileName : string, required : bool = True ) : io either<exception,string> 
+public function tryReadTextFile( fileName : string, required : bool = True ) : io either<exception,string>
 {
-  catch( { Right(readTextFileSync(fileName,required)) }, fun(exn) { Left(exn) }) 
+  catch( { Right(readTextFileSync(fileName,required)) }, fun(exn) { Left(exn) })
 }
 
 
@@ -142,9 +142,9 @@ external xreadTextFileSync( fileName : string ) : io string
   js inline "$readFileSync(#1,'utf-8')"
 }
 
-// Try to write a text file synchronously (using UTF8 encoding). 
+// Try to write a text file synchronously (using UTF8 encoding).
 // Returns "True" if successful.
-public function tryWriteTextFile( fileName : string, content : string )  : io bool 
+public function tryWriteTextFile( fileName : string, content : string )  : io bool
 {
   catch( { writeTextFileSync(fileName,content); True }, fun(_exn) { False } )
 }
@@ -236,9 +236,9 @@ public function readBase64FileDef( fileName : string, def : string, required : b
 }
 
 // Try to a binary file synchronously (using base64 encoding)
-public function tryReadBase64File( fileName : string, required : bool = True ) : io either<exception,string> 
+public function tryReadBase64File( fileName : string, required : bool = True ) : io either<exception,string>
 {
-  catch( { Right(readBase64FileSync(fileName,required)) }, fun(exn) { Left(exn) }) 
+  catch( { Right(readBase64FileSync(fileName,required)) }, fun(exn) { Left(exn) })
 }
 
 // Read a binary file synchronously (using base64 encoding)
@@ -255,9 +255,9 @@ external xreadBase64FileSync( fileName : string ) : io string
   js inline "$readFileSync(#1,'base64')"
 }
 
-// Try to write a binary file synchronously (using base64 encoding). 
+// Try to write a binary file synchronously (using base64 encoding).
 // Returns "True" if successful.
-public function tryWriteBase64File( fileName : string, content : string )  : io bool 
+public function tryWriteBase64File( fileName : string, content : string )  : io bool
 {
   catch( { writeBase64FileSync(fileName,content); True }, fun(_exn) { False } )
 }
