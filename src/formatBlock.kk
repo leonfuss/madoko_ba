@@ -221,16 +221,7 @@ public function formatBlock( context : formatContext, block : block ) : div stri
           val mtxt = txt.escapeMath(context.fmt)
           match(context.fmt) {
             FmtTex  -> lineInfo + mtxt
-            FmtHtml -> {
-              log("math-full","%mdk-begin-mathdefs\n" + lineInfo + txt + "\n")
-              if (context.inlineContext.mathStatic) {
-                log("math-plain","%mdk-begin-mathdefs\n" + lineInfo + txt + "\n")
-                ""
-              }
-              else {
-                "\\[" + mtxt + "\\]"
-              }
-            }
+            FmtHtml -> "\\[" + mtxt + "\\]"
           }
         }
         Markdown  -> context.inlineContext.formatInline(txt,parentAttrs)

@@ -9,7 +9,6 @@
 // The ":options" type and parsing of the command line
 module options
 
-
 import std/log
 import std/env
 import std/dict
@@ -21,49 +20,6 @@ import common
 
 // Metadata is just a string to string map.
 public alias metadata = list<(string,string)>
-
-
-// Mathematics rendering mode.
-public type mathmode {
-  Static  // latex generated images
-  Dynamic // mathjax
-}
-
-public struct mathoptions (
-  mode      : mathmode = Static,  // mode used to render math
-  render    : maybe<mathrender> = Nothing, // math rendering method
-  renderFull: maybe<mathrender> = Nothing, // math rendering method for math-needfull snippets
-
-  mathjax   : string = "",        // mathjax scripts path (use "default" for default path)
-  mjext     : string = "",        // semicolon separated list of mathjax extensions
-
-  imgDir    : string = "math",    // directory for static math images
-  scale     : int    = 0,         // math scaling in percentage
-  scalePng  : int    = 108,       // default scaling for png
-  scaleSvg  : int    = 105,       // default scaling for svg
-  dpi       : int    = 300,       // math resolution
-  baseline  : int    = 0,         // math baseline offset in percentage of 1pt
-  embedLimit: int    = 512*1024,  // maximal embedded math image size
-  docClass  : string = "[10pt]book",
-
-  svgShare  : bool   = True,      // share paths in embedded svg images
-  svgPrec   : int    = 3,         // decimal points used in svg rendering
-  svgDefs   : string = "",        // used internally to share svg definitions
-  svgFontFormat: string = "",     // embed fonts directly in svg, use 'none' or '' to use SVG paths
-  svgBBoxExact : bool = False,    // use exact bounding box
-
-  concurrency   : int  = 4,       // max concurrency for generating math renderings
-
-  dvipng        : string = "dvipng",  // used to extract png images for math
-  dvisvg        : string = "dvisvgm",  // used to extract svg for math
-  latex         : string = "", // if non-empty, used for math, use "" for the default program
-  latexFull     : string = "", // if non-empty, used for math with math-needfull. Use "" for default program
-  dvips         : string = "dvips",   // used with ps2pdf when mathlatexFull is empty
-  ps2pdf        : string = "ps2pdf",
-  convert       : string = "convert", // used to extract png's from pdf for math that needs it
-  dim           : dict<mathinfo> = dict()  // static math dimension information
-)
-
 
 // The options
 public struct options(
@@ -115,8 +71,6 @@ public struct options(
   prettyAlign   : int  = 2, // default alignment spaces for .pretty mode
   logo          : bool = False, // generate a logo at the end of the document
 
-  math          : mathoptions = Mathoptions(),
-
   highlight     : bool = True,
   hilitelang    : string = "",        // semi-colon separated list
 
@@ -138,55 +92,6 @@ public struct options(
   extractEnd    : string = @"^(?:\/\/|--|[#%]|[<]!--|\(\*) *END *(?:[:] *(\w+) *)?(?:--[>]|\*\))?$"
 );
 
-public function getPdfLatex( opts : options ) : string {
-  if (opts.pdflatex.bool) then opts.pdflatex
-   else combine(opts.latex.dirname,"xelatex")
-}
-
-public function getMathLatexFull( opts : options ) : string {
-  if (opts.math.latexFull.bool) then opts.math.latexFull
-   else opts.getMathLatex
-}
-
-public function getMathLatex( opts : options ) : string {
-  if (opts.math.latex != "") then opts.math.latex
-  // elif (mrender.isPng) then opts.latex // dvi route is much faster for png extraction
-  else opts.latex // was: opts.getPdfLatex, but pdflatex/latex proves more reliable for svg extraction
-}
-
-public function getMathjax( opts : mathoptions ) : string {
-  if (opts.mathjax != "default") then opts.mathjax
-   else "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
-}
-
-public function getMathRender( opts : mathoptions, kind : mathkind ) : mathrender {
-  match(kind) {
-    Plain -> opts.getMathRender
-    Full  -> opts.getMathRenderFull
-  }
-}
-
-public function getMathRender( opts : mathoptions ) : mathrender {
-  match(opts.render) {
-    Nothing -> Svg
-    Just(m) -> m
-  }
-}
-
-public function getMathRenderFull( opts : mathoptions ) : mathrender {
-  match(opts.renderFull) {
-    Nothing -> opts.getMathRender
-    Just(m) -> m
-  }
-}
-
-public function getMathScale( opts : mathoptions, mrender : mathrender ) : int {
-  if (opts.scale==0) then match(mrender) {
-    Png -> opts.scalePng
-    Svg -> opts.scaleSvg
-  }
-  else opts.scale
-}
 
 public struct commandOptions(
   showVersion : bool = False,
@@ -234,7 +139,6 @@ val optionsDesc : list<option<commandOptions>>
       Option( "",  ["tex"],     oflag(fun(o,v) { o(tex = v) }),       "Generate a LaTeX file too"),
       Option( "",  ["pdf"],     oflag(fun(o,v) { o(pdf = v, tex = if (v) then True else o.tex) }),  "Generate PDF using LaTeX"),
       Option( "",  ["texzip"],  oflag(fun(o,v) { o(texzip = v, tex = if (v) then True else o.tex, pdf = if (v) then True else o.pdf, lineNo = 0) }), "Generate TeX zip for submission"),
-      Option( "",  ["png"],     oflag(fun(o,v) { o(math = (o.math)(render = Just(if (v) then Png else Svg))) }),  "Use PNG instead of SVG for math in HTML"),
       Option( "",  ["convert-tex"], cflag(fun(co,v) { co(convertTex=v) }), "Convert input from TeX to Markdown"),
 
       Option( "f", ["fragment"], oflag(fun(o,v) { o(full=Just(!v)) }), "Generate a fragment instead of a full document"),

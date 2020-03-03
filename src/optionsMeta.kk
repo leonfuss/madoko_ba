@@ -14,7 +14,6 @@ import std/path
 import std/string
 import common
 import options
-import optionsMath
 
 public function fromMeta( opts : options, mdata : metadata ) : options {
   mdata.foldl(opts) fun(options : options, kv : (string,string)) {
@@ -66,9 +65,6 @@ function update( options : options, key : string, xvalue : string, mdata : metad
   elif (key=="pretty-align") options(prettyAlign=ivalue)
   elif (key=="refer") { log("filesRefer",value); options }
   elif (key=="copy-styles") options(copyStyles=(value!=""))
-  elif (key.startsWith("math")) {
-    options.updateMath( key, lvalue, value, ivalue, bvalue )
-  }
   else {
     options
   }

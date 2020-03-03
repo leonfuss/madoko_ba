@@ -22,7 +22,6 @@ import madoko
 import block    // for lineMap
 import storage
 import hilite
-import mathParse
 import texParser
 import includes
 
@@ -64,18 +63,16 @@ public function processContent( inName : string, outName : string, content : str
     // copy early since async latex may start for math
     if (mopts.copyStyles) {
       tryCopyTextFileFromNoSandboxTo( "madoko.css", styleDir, outName.dirname )
-      // only copy style files if generating tex or if math is static
-      if (xopts.tex || mopts.math.mode.isStatic) {
-        val isTex2  = match(mopts.metadata.find( fun(md) { md.fst == "tex2" } )) {
-                        Just(md) -> md.snd.toLower == "true"
-                        _ -> False
-                      }
-        val files = if (isTex2)
-                     then standardTexStyles
-                     else ["css.sty", "madoko.sty"]
-        files.foreach fun(fname) {
-          tryCopyTextFileFromNoSandboxTo(fname, styleDir, outName.dirname )
-        }
+
+      val isTex2  = match(mopts.metadata.find( fun(md) { md.fst == "tex2" } )) {
+                      Just(md) -> md.snd.toLower == "true"
+                      _ -> False
+                    }
+      val files = if (isTex2)
+                   then standardTexStyles
+                   else ["css.sty", "madoko.sty"]
+      files.foreach fun(fname) {
+        tryCopyTextFileFromNoSandboxTo(fname, styleDir, outName.dirname )
       }
     }
 

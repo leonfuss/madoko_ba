@@ -108,7 +108,6 @@ public function analyze(
   val options = Options(
     version=version/version,
     lineNoWeb=True,
-    math=Mathoptions(mode = Static),
     embedLimit=0,
     verbose=1,
     full=Just(False),
@@ -165,10 +164,8 @@ function markdownNormal( src0 : string, options0 : options = initialOptions0, fm
 
   // parse definitions
   val icontext  = inlineContext(fmt,options.metadata.dict,
-                                    options.math.dim,
                                     options.embedinfos,
                                     options.sanitize,options.bench,options.verbose,
-                                    options.math.mode.isStatic,
                                     options.highlight,options.starBold,options.sandbox,options.prettyAlign)
   //if (options.verbose > 2) then trace("process definitions")
   val (fblocks,fcontext)
@@ -221,12 +218,10 @@ function logMetadata( mdata : metadata ) {
 // Create an ":inlineContext"
 public function inlineContext( fmt : formatter,
                                metadata : dict<string>,
-                               mathinfos : dict<mathinfo>,
                                embedinfos : dict<embedinfo>,
                                sanitize : bool = False,
                                bench: bool = False,
                                verbose : int = 0,
-                               mathStatic : bool = False,
                                highlight : bool = True,
                                starBold : bool = False,
                                sandbox: bool = False,
@@ -239,8 +234,8 @@ public function inlineContext( fmt : formatter,
 
   InlineContext( inlineGrammar(fmt,bench), dict(), dict(), dict(),
                  emptyRules,
-                 metadata, mathinfos, embedinfos,
-                 sanitize, bench, verbose, mathStatic, highlight, starBold, sandbox, prettyAlign,
+                 metadata, embedinfos,
+                 sanitize, bench, verbose, highlight, starBold, sandbox, prettyAlign,
                  fmtLatexCmd,
                  fmtLatexEscape,
                  fmtLatexLink,

@@ -90,12 +90,6 @@ function stripFancyRules( g : grammar<string,inlineContext> ) : grammar<string,i
 
 public function inlineGrammar( fmt : formatter, bench : bool = False ) {
   if (bench) then benchGrammar else inlineCoreGrammar(fmt)
-  /* for gfm style line breaks */
-  /*
-  inlineCoreGrammar
-   .ruleReplace( breaks, Rule("itext", regex(@"^(?:[^\n" + special + "])+"), inlineNormal ))
-   .ruleReplace( breaks, Rule("ibr",   regex(@"^\n(?!\s*$)"), inlineBreak ))
-  */
 }
 
 
@@ -156,20 +150,7 @@ public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : strin
     FmtTex -> texcmd
     _      -> {
       val mtxt = left + txt.escapeMath(context.fmt) + right
-      val mcmd = context.fmtCmd("span",context.fmtText(mtxt),attrsd)
-      if (context.mathStatic || mode.isFull /* never use mathjax for full math */) {
-        val digest = md5(txt)
-        // This is where we have both the range and the md5-digest!
-        logMathLocation(digest, attrs)
-
-        log("math-" + mode.show,
-              @"\begin{md" + kind + "Snippet}[" + digest + "]%mdk\n" +
-                texcmd + "\\end{md" + kind + "Snippet}%mdk")
-        // trace(txt)
-        // trace("math: " + digest)
-        context.fmtCmd("span",mcmd,attrsNone.addClass("math-rendering").addKeyval("html-title","Rendering math..."))
-      }
-      else mcmd
+      context.fmtCmd("span",context.fmtText(mtxt),attrsd)
     }
   }
 }
@@ -668,15 +649,7 @@ public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs =
     FmtTex -> texcmd
     _      -> {
       val mtxt = left + txt.escapeMath(context.fmt) + right
-      val mcmd = context.fmtCmd("span",context.fmtText(mtxt),attrsd)
-      if (context.mathStatic || mode.isFull /* never use mathjax for full math */) {
-        val digest = md5(txt)
-        log("math-" + mode.show,
-              @"\begin{md" + kind + "Snippet}[" + digest + "]%mdk\n" +
-                texcmd + "\\end{md" + kind + "Snippet}%mdk")
-        context.fmtCmd("span",mcmd,attrsNone.addClass("math-rendering").addKeyval("html-title","Rendering math..."))
-      }
-      else mcmd
+      context.fmtCmd("span",context.fmtText(mtxt),attrsd)
     }
   }
 }
