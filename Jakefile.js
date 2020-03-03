@@ -12,18 +12,15 @@ var path = require("path");
 var child = require("child_process");
 
 
-
 //-----------------------------------------------------
 // Configuration
 //-----------------------------------------------------
-var main      = "madoko";
-var maincli   = "main";
-var sourceDir = "src";
-var outputDir = "lib";
-var styleDir  = "styles";
+var main       = "madoko";
+var maincli    = "main";
+var sourceDir  = "src";
+var outputDir  = "lib";
+var styleDir   = "styles";
 var contribDir = "contrib";
-var web       = "web";
-var webclient = path.join(web,"client");
 
 // we compile madoko at this time with an older version of Koka.
 // Check out Koka in a peer directory of Madoko; i.e. `.../dev/madoko` and `.../dev/koka-0.6`:
@@ -109,6 +106,7 @@ task("copystyles", [], function() {
   copyFiles(path.join(contribDir,"csl"),js.toArray(),styleDir);
 });
 
+
 //-----------------------------------------------------
 // Tasks: clean
 //-----------------------------------------------------
@@ -122,33 +120,6 @@ task("clean", function() {
   jake.rmRf("web/client/lib");
 });
 
-//-----------------------------------------------------
-// Tasks: web
-//-----------------------------------------------------
-desc("build web madoko")
-task("web", [], function() {
-  // fixVersion("web/client/editor.html");
-  var args = Array.prototype.slice.call(arguments).join(" ")
-  var cmd = kokaCmd + " -v -l " + args + " " + "web" + maincli
-  jake.logger.log("> " + cmd);
-  jake.exec(cmd, {interactive: true}, function(err) {
-    complete();
-  });
-},{async:true})
-
-//-----------------------------------------------------
-// Tasks: api
-//-----------------------------------------------------
-desc("build madoko api")
-task("api", [], function() {
-  // fixVersion("web/client/editor.html");
-  var args = Array.prototype.slice.call(arguments).join(" ")
-  var cmd = kokaCmd + " -v -l " + args + " " + "api"
-  jake.logger.log("> " + cmd);
-  jake.exec(cmd, {interactive: true}, function(err) {
-    complete();
-  });
-},{async:true})
 
 //-----------------------------------------------------
 // Tasks: test
@@ -161,95 +132,6 @@ task("test", ["madoko"], function() {
   jake.log("> " + testCmd)
   jake.exec(testCmd, {printStdout: true, printStderr: true})
 });
-
-
-//-----------------------------------------------------
-// Tasks: doc
-//-----------------------------------------------------
-desc("generate documentation.\n  doc[--pdf]       # generate pdf too (using LaTeX).")
-task("doc", [], function() {
-  var docout = "out";
-  args = Array.prototype.slice.call(arguments).join(" ");
-  var pngs = new jake.FileList().include(path.join("doc","*.png"));
-  copyFiles("doc",pngs.toArray(),path.join("doc",docout));
-  process.chdir("doc");
-  mdCmd = "node ../lib/cli.js -v --odir=" + docout + " " + args + " reference.mdk mathdemo.mdk slidedemo.mdk";
-  jake.log("> " + mdCmd);
-  jake.exec(mdCmd, {interactive:true}, function() {
-    var files = ["reference","mathdemo","slidedemo"];
-    var styles= [path.join(docout,"madoko.css")];
-    var htmls = files.map( function(fname) { return path.join(docout,fname + ".html") });
-    var pdfs  = files.map( function(fname) { return path.join(docout,fname + ".pdf") });
-    var outfiles = htmls.concat(args.indexOf("--pdf") < 0 ? [] : pdfs,styles)
-    copyFiles(docout,outfiles,".");
-    complete();
-  });
-});
-
-
-var doclocal = (process.env.doclocal || "\\\\research\\root\\web\\external\\en-us\\UM\\People\\daan\\madoko\\doc");
-desc("publish documentation")
-task("publish", [], function () {
-  // copy to website
-  var docout = "doc"
-  var files = new jake.FileList().include(path.join(docout,"*.html"))
-                                 .include(path.join(docout,"*.css"))
-                                 .include(path.join(docout,"*.pdf"))
-                                 .include(path.join(docout,"*.png"))
-                                 .include(path.join(docout,"*.bib"))
-                                 .include(path.join(docout,"*.js"))
-                                 .include(path.join(docout,"*.mdk"));
-  copyFiles(docout,files.toArray(),doclocal);
-  fs.renameSync(path.join(doclocal,"reference.mdk"),path.join(doclocal,"reference.mdk.txt"));
-  fs.renameSync(path.join(doclocal,"slidedemo.mdk"),path.join(doclocal,"slidedemo.mdk.txt"));
-},{async:false});
-
-//-----------------------------------------------------
-// Tasks: line count
-//-----------------------------------------------------
-desc("line count.")
-task("linecount", [], function() {
-  var sources = new jake.FileList().include(path.join(sourceDir,"*.kk"));
-  // var sources = new jake.FileList().include(path.join("lib","*.js"));
-  var src = sources.toArray().map( function(file) { return fs.readFileSync(file,{encoding:"utf8"}); }).join()
-  //xsrc     = src.replace(/^[ \t]*\/\*[\s\S]*?\*\/[ \t\r]*\n|^[ \t]*\/\/.*\n/gm, "")
-  comments = lineCount(src.match(/^[ \t]*\/\*[\s\S]*?\*\/[ \t\r]*\n|^[ \t]*\/\/.*\n/gm).join())
-  blanks   = src.match(/\r?\n[ \t]*(?=\r?\n)/g).length
-  total    = lineCount(src)
-  jake.log("total lines   : " + total)
-  jake.log(" source lines : " + (total-comments-blanks))
-  jake.log(" comment lines: " + comments)
-  jake.log(" blank lines  : " + blanks )
-});
-
-function lineCount(s) {
-  return s.split(/\n/).length;
-}
-
-//-----------------------------------------------------
-// Tasks: documentation generation & editor support
-//-----------------------------------------------------
-var cmdMarkdown = "node " + path.join(outputDir,maincli + ".js");
-
-desc("create source documentation.")
-task("sourcedoc", [], function(mode) {
-  jake.logger.log("build documentation");
-  var out = outputDir + "doc"
-  var tocCmd = kokaCmd + "-o" + out + " -l --html -v toc.kk"
-  jake.log("> " + tocCmd)
-  jake.exec(tocCmd, {interactive: true}, function () {
-    var outstyles = path.join(out,"styles");
-    var xmpFiles = new jake.FileList().include(path.join(out,"*.xmp.html"));
-    var cmd = cmdMarkdown + " " + xmpFiles.toArray().join(" ")
-    jake.log( "> " + cmd)
-    jake.exec(cmd, {printStdout: true, printStderr:true}, function () {
-      // copy style file
-      jake.mkdirP(outstyles);
-      jake.cpR(path.join(kokaDir,"doc","koka.css"),outstyles);
-      complete();
-    });
-  });
-}, {async:true});
 
 
 //-----------------------------------------------------
