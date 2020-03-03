@@ -29,12 +29,6 @@ public type mathmode {
   Dynamic // mathjax
 }
 
-// Bibliography styles
-public type bibstyle {
-  Bst( styleName: string, locale: string )
-  Csl( styleName: string, locale: string )
-}
-
 public struct mathoptions (
   mode      : mathmode = Static,  // mode used to render math
   render    : maybe<mathrender> = Nothing, // math rendering method
@@ -105,7 +99,6 @@ public struct options(
   texFooter: string= "",   // literal tex footer
   texSectionNum: bool = False, // use tex section numbering
 
-  bibStyle : bibstyle = Csl("madoko-numeric",""),  // bibliography style file (.bst or .csl)
   bib      : string = "",  // bibliography definition files (.bib)
   locale   : string = "en-US", // language
 
@@ -122,7 +115,7 @@ public struct options(
   sectionBase   : int  = 1, // starting section level.
   starBold      : bool = False, // use * for bold?
   prettyAlign   : int  = 2, // default alignment spaces for .pretty mode
-  logo          : bool = True, // generate a logo at the end of the document
+  logo          : bool = False, // generate a logo at the end of the document
 
   math          : mathoptions = Mathoptions(),
 

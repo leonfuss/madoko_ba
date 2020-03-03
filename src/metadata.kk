@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013-2015 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -23,7 +23,7 @@ import expression
 
 // Parse the meta-data at the start of a document,
 // and return updated options and the rest of the document
-public function parseMeta( options0 : options, fmt : formatter, txt : string ) : div (options, string) 
+public function parseMeta( options0 : options, fmt : formatter, txt : string ) : div (options, string)
 {
   // read initial metadata
   val (txt1,lineCount0) = stripInitialWhite(txt)
@@ -36,7 +36,7 @@ public function parseMeta( options0 : options, fmt : formatter, txt : string ) :
     mdatax
   }
   val mdata2 = mdata1 + mdatas.concat
-  val mdataDef  = parsePlainMeta(defaultMeta(options0,fmt), fmt,options0.lineMap, verbose=options0.verbose >= 4).fst      
+  val mdataDef  = parsePlainMeta(defaultMeta(options0,fmt), fmt,options0.lineMap, verbose=options0.verbose >= 4).fst
   // set options from metadata
   val mdataFull = mdataDef + options0.cmetadata + mdata2
   val mdataModed = mdataFull.evalConditionals(options0.verbose)
@@ -45,7 +45,7 @@ public function parseMeta( options0 : options, fmt : formatter, txt : string ) :
 
   if (options.lineNo > 0)
    then (options(lineNo = options.lineNo + lineCount),rest)
-   else (options,rest)  
+   else (options,rest)
 }
 val rxMetaSection = regex(@"^<!--meta *\n([\s\S]*?)^-->", multiline=True)
 
@@ -78,33 +78,33 @@ function cmetadata( options : options ) : cmetadata {
 // --------------------------------------------------------------
 
 function makeKey(k,pre,value,rawvalue,lineMap,lines,isMatching) : ckey {
-  val kstart = k.substr(0,1) 
+  val kstart = k.substr(0,1)
   val isrule = (kstart=="#" || kstart=="." || kstart=="~")
   val key = if (isrule) then k.trim.toLower
-            elif (isMatching) then "~" + k.trim.toLower 
+            elif (isMatching) then "~" + k.trim.toLower
             else k.trim.normalizeId
   if (key.startsWith("~")) {
-    log("customs","{\"name\":" + key.json + ",\"display\":" + 
+    log("customs","{\"name\":" + key.json + ",\"display\":" +
         (if (isrule) then k.substr(1) else k).json + "}")
   }
-  val ckey = if (key=="tex-header" || key=="tex-footer" || key=="tex-header-" || key=="tex-doc-header" || key=="tex-doc-header-" )   
+  val ckey = if (key=="tex-header" || key=="tex-footer" || key=="tex-header-" || key=="tex-doc-header" || key=="tex-doc-header-" )
                then Key(key,"%mdk-data-line={" + translateLine(lineMap,lines+1) + "}\n" + rawvalue )
                else Key(key,value)
   if (pre.isEmpty)
    then ckey
    else Support( pre, [ckey], translateLine(lineMap,lines))
-}                 
+}
 
-function parsePlainMeta( txt : string, fmt : formatter, lineMap: lineMap, metadata : cmetadata = [], verbose : bool = False, lines : int = 0 ) : div (cmetadata,string,int) 
-{ 
+function parsePlainMeta( txt : string, fmt : formatter, lineMap: lineMap, metadata : cmetadata = [], verbose : bool = False, lines : int = 0 ) : div (cmetadata,string,int)
+{
   match(txt.find(rxMetaComment)) {
     Just(cap) -> {
       if (cap.groups[1].bool) {
-        parsePlainMeta(cap.groups[2].unindent + cap.groups[3] + txt.substr1(cap.next), fmt, lineMap, metadata, verbose, 
+        parsePlainMeta(cap.groups[2].unindent + cap.groups[3] + txt.substr1(cap.next), fmt, lineMap, metadata, verbose,
                        lines + txt.substr(0,cap.index).count("\n") + 1)
       }
       else {
-        parsePlainMeta(txt.substr1(cap.next), fmt, lineMap, metadata, verbose, 
+        parsePlainMeta(txt.substr1(cap.next), fmt, lineMap, metadata, verbose,
                         lines + txt.substr(0,cap.next).count("\n"))
       }
     }
@@ -128,11 +128,11 @@ function parsePlainMeta( txt : string, fmt : formatter, lineMap: lineMap, metada
             val rawvalue = cap.groups[4] || cap.groups[6]  // 6=:value, 4={value}
             val value    = rawvalue.joinLines.trim
             if (verbose) trace("meta data: " + cap.groups[2] + ": " + value.cutoff(80) )
-            val rawkeys = //if (cap.groups.matchedOn(3)) then 
+            val rawkeys = //if (cap.groups.matchedOn(3)) then
                           cap.groups[2].split(",").list.map(trim)
-                          //else [cap.groups[2]]     
+                          //else [cap.groups[2]]
             val pre = if (cap.groups[1] != "") then "@" + cap.groups[1] + " " else ""
-            val kvs = rawkeys.map( fun(k) { makeKey(k,pre,value,rawvalue,lineMap,lines,(cap.groups[5]=="}")) } );                
+            val kvs = rawkeys.map( fun(k) { makeKey(k,pre,value,rawvalue,lineMap,lines,(cap.groups[5]=="}")) } );
             val lines2 = txt.substr(0,cap.next).count("\n")
             parsePlainMeta( txt.substr1(cap.next), fmt,lineMap, kvs + metadata, verbose, lines+lines2 )
           }
@@ -140,7 +140,7 @@ function parsePlainMeta( txt : string, fmt : formatter, lineMap: lineMap, metada
       }
     }
   }
-} 
+}
 
 val rxMetaKeyEnd  = @"(?:(?:\[[^\]\n\r]*\])+|\*)?"
 val rxMetaKey     = @"(?:@([\w\-@]+) +)?((?:\w|([\.#~])(?=\S))[\w\-\.#~, ]*?" + rxMetaKeyEnd + @") *(?=[\{:])"
@@ -205,7 +205,7 @@ function flatten( mdata:cmetadata, modes:mdict<h,constant>, verbose : int ) : <d
       }
       Support(condition,body,lineInfo) -> {
         logLocation(lineInfo)
-        val b = evaluateBool(condition,modes,mdata,verbose) 
+        val b = evaluateBool(condition,modes,mdata,verbose)
         if (verbose >= 4) then trace("evaluate: " + condition + " -> " + b.show + ": " + lineInfo)
         if (b)
          then flatten(body,modes,verbose)
@@ -237,9 +237,9 @@ function evaluateBool( cond : string, modes : mdict<h,constant>, mdata : cmetada
   }
   val b = evaluate( cond, fun(e) { evalExpr(e,lookup).bool }, False)
   // trace("evaluate: " + cond + " -> " + b.show + " (recursive=" + recursive.show + ")" )
-  if (recursive) 
+  if (recursive)
    then False // a self-dependent support block evaluates to false
-   else b  
+   else b
 }
 
 
@@ -250,7 +250,7 @@ function lookupMode( modes : mdict<h,constant>, mode : string, mdata : cmetadata
       Just(c)
     }
     Nothing -> {
-      val mbRes = mdata.reverse.foreachUntil( fun(ckey) { 
+      val mbRes = mdata.reverse.foreachUntil( fun(ckey) {
         match(ckey) {
           Key(key,raw) -> {
             if (key != mode) then Nothing
@@ -269,7 +269,7 @@ function lookupMode( modes : mdict<h,constant>, mode : string, mdata : cmetadata
               }
               else {
                 //trace(" support " + cond + " contains " + mode + " but is false: " + lineInfo )
-                Nothing               
+                Nothing
               }
             }
             else {
@@ -312,9 +312,8 @@ function defaultMeta( options : options, fmt : formatter ) : string {
       // full?
       "Full: " + options.full.maybe(True,id).show,
       // legacy for old prelude
-      @"bibliography { bibstyle:'" + options.bibStyle.styleName + @"'; bibdata:'" + options.bib.splitPaths.join(",") + "'; tex-elem:mdBibliography }",
+      @"bibliography { 'bibdata:'" + options.bib.splitPaths.join(",") + "'; tex-elem:mdBibliography }",
     ] +
     ["\n"]
-  ).join("\n") 
+  ).join("\n")
 }
-

@@ -47,22 +47,6 @@ function update( options : options, key : string, xvalue : string, mdata : metad
     if (value!="") log("files", value.changeExt(".bib"))
     options(bib=if (value=="") then "" else options.bib + ";" + value);
   }
-  elif (key=="bib-style" || key=="biblio-style" || key=="bibliography-style") {
-    if (value.extname!="" || value.dirname!="") { // we need to log here since we don't always 'read' the bst if the bibs are unchanged
-      log("files", value.defaultExt(".bst"))
-    }
-    if (value.bool) then options(bibStyle=Bst(value,"")) else options
-  }
-  elif (key=="csl-style") {
-    val cslname = if (value.extname.isEmpty && value.dirname.isEmpty)
-                   then lvalue.replaceAll(" ","-") // normalize CSL style name
-                   else value
-    // we need to log here since we don't always 'read' the cls if the bibs are unchanged
-    if (cslname.bool) {
-      options(bibStyle=Csl(cslname,""))
-    }
-    else options
-  }
   elif (key=="locale") { options(locale=value) }
   elif (key=="html-header") options(htmlHeader=if(value=="") then "" else options.htmlHeader.appendNL(value))
   elif (key=="css-header") options(cssHeader=if(value=="") then "" else options.cssHeader.appendNL(value))
@@ -77,18 +61,6 @@ function update( options : options, key : string, xvalue : string, mdata : metad
   elif (key=="tex-section-num") options(texSectionNum=(value!=""))
   elif (key=="fragment-start" || key=="extract-start") options(extractStart=xvalue)
   elif (key=="fragment-end" || key=="extract-end") options(extractEnd=xvalue)
-
-  elif (key=="cite-style") {
-    if (lvalue=="clear" || lvalue=="none") then options(citestyle = Nothing)
-    elif (lvalue=="") then options
-    else match(parseCiteStyle(lvalue)) {
-      Nothing -> {
-        warning("unrecognized citation style: " + lvalue)
-        options
-      }
-      Just(cs) -> options(citestyle=Just(cs))
-    }
-  }
   elif (key=="cite-all") options(citeAll=(value!=""))
   elif (key=="embed" || key=="embed-limit") options(embedLimit=if (value=="") then 0 elif (value=="true") then 1024 else (ivalue*1024))
   elif (key=="section-depth") options(sectionMax=ivalue)
