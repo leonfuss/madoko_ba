@@ -31,7 +31,6 @@ val standardTexStyles = ["ellipse.sty","options.sty","longbox.sty","longfbox.sty
 
 public function processContent( inName : string, outName : string, content : string,
                           opts : commandOptions, firstTime : bool = False,
-                          runners : runners,
                           continue : (output:string,inputName:string,outputName:string,options:options) -> io () ) : io ()
 {
   val styleDir = opts.installDir + "/../styles"
@@ -75,9 +74,9 @@ public function processContent( inName : string, outName : string, content : str
       }
     }
 
-    process( inName, outName, searchDirs, content, icontent, xopts, mopts, firstTime, runners)
+    process( inName, outName, searchDirs, content, icontent, xopts, mopts, firstTime)
       fun() {
-        processContent(inName,outName,content,opts,False,runners,continue) // redo!
+        processContent(inName,outName,content,opts,False,continue) // redo!
       }
       fun(html) {
         continue(html,inName,outName,mopts)
@@ -97,56 +96,38 @@ val rxCurDir = regex(@"^(\.)(?=[\\/])")
 
 function process( inName : string, outName : string, searchDirs : list<string>,
                   content : string, icontent : string,
-                  xopts : options, mopts : options, firstTime : bool, runners : runners,
+                  xopts : options, mopts : options, firstTime : bool,
                   redo : () -> io (),
                   continue : (string) -> io () ) : io ()
 {
-  function phaseHtml()
-  {
-    // markdown to html
-    val (warns0,(_, (_,_fullOptions,_,_))) =
-         withLogCompress("warning") {
-          withLogCompress("aux") {
-           markdown(icontent,xopts)
-         }}
 
-    // show warnings
-    val warns = fixWarnings(warns0)
-    if (warns != "") {
-      log("stdout",warns)
-      if (mopts.verbose >= 1) {
-        print(warns)
-      }
+  // generate tex
+  val outTexName = outName.changeExt(".tex")
+
+  if (mopts.verbose >= 1) println("process: " + inName + " -> " + outTexName )
+  val (texwarns, (texFiles, (texRefer, tex)))
+        = withLog("texwarning", {
+            withLog("files", {
+              withLog("filesRefer", {
+               markdown(icontent,xopts,FmtTex).fst
+              })
+            })
+          })
+
+  if (texwarns != "") {
+    log("stdout",texwarns)
+    if (mopts.verbose>=1) {
+      print(texwarns)
     }
-
-    // generate tex
-    val outTexName = outName.changeExt(".tex")
-    val texRefers =
-      if (!mopts.tex) then [] else {
-        if (mopts.verbose >= 1) println("process: " + inName + " -> " + outTexName )
-        val (texwarns, (texFiles, (texRefer, tex)))
-              = withLog("texwarning", {
-                  withLog("files", {
-                    withLog("filesRefer", {
-                     markdown(icontent,xopts,FmtTex).fst
-                    })
-                  })
-                })
-        if (texwarns != "") {
-          log("stdout",texwarns)
-          if (mopts.verbose>=1) {
-            print(texwarns)
-          }
-        }
-        if (!(tryWriteTextFile(outTexName,tex))) {
-          mopts.printErr("error: unable to write: " + outTexName)
-        }
-        texFiles.split("\n").list + texRefer.split("\n").list
-      }
-    continue("")
   }
 
-  phaseHtml()
+  if (!(tryWriteTextFile(outTexName,tex))) {
+    mopts.printErr("error: unable to write: " + outTexName)
+  }
+
+  texFiles.split("\n").list + texRefer.split("\n").list
+
+  continue("")
 }
 
 // Fixup locations in warnings:

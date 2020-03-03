@@ -53,11 +53,8 @@ public function test( s : string = "code_blocks", moreargs = "" ) {
     else {
       trace("*** test success (modulo whitespace)")
     }
-    //println("done!")
   }
 }
-
-val runners = Runners( )
 
 public function markdownFiles(args : string, action : (string,string,string,options) -> io ()) : io () {
   val mbopts = parseOptions(version,args);
@@ -75,10 +72,10 @@ public function markdownFiles(args : string, action : (string,string,string,opti
         match (input.tryReadTextFile()) {
           Left -> println("error: unable to read: " + input )
           Right(content) -> {
-            processContent(input, outName, content, opts, True, runners, action)
+            processContent(input, outName, content, opts, True, action)
           }
         }
-      } // foreach
+      }
     }
   }
 }
