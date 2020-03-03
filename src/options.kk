@@ -74,13 +74,6 @@ public struct options(
   highlight     : bool = True,
   hilitelang    : string = "",        // semi-colon separated list
 
-  pdflatex      : string = "",        // defaults to 'xe' + latex cmd
-  bibtex        : string = "bibtex",
-  latex         : string = "latex",   // used to generate dvi for math
-  processTimeout: int = 0,            // kill child process after <timeout>
-
-  zip           : string = "zip",     // zip program
-
   metadata      : metadata = [],
   embedinfos    : dict<embedinfo> = dict(),   // embed data, used in a browser
   embedLimit    : int = 512*1024,             // limit for embedding data (javascript, css, etc.)

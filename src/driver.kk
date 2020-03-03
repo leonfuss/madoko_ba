@@ -45,7 +45,6 @@ public function processContent( inName : string, outName : string, content : str
 
     val date   = now()
     val xopts  = opts0(lineMap=lmap,
-                       processTimeout=if (opts0.sandbox) then 120000 else opts0.processTimeout,
                        metadata=opts0.metadata
                        + [("docname",inName.stemname),("filename",inName)]
                        + [("madoko-version",opts0.version)]
