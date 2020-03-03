@@ -14,7 +14,6 @@ import std/path
 import std/string
 import common
 import options
-import optionsSandbox
 import optionsMath
 
 public function fromMeta( opts : options, mdata : metadata ) : options {
@@ -108,7 +107,7 @@ function update( options : options, key : string, xvalue : string, mdata : metad
     options.updateMath( key, lvalue, value, ivalue, bvalue )
   }
   else {
-    options.updateSandbox( key, lvalue, value, ivalue )
+    options
   }
 }
 

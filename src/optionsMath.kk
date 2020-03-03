@@ -13,7 +13,6 @@ import std/log
 import std/path
 import common
 import options
-import optionsSandbox
 
 
 public function updateMath( options:options, key: string, lvalue: string, value:string, ivalue: int, bvalue:bool ) : options
@@ -39,7 +38,7 @@ public function updateMath( options:options, key: string, lvalue: string, value:
                                then options(math = (options.math)(mode=Dynamic, mathjax=(if (lvalue=="true") then "default" else value)))
                                else options(math = (options.math)(mode=Static, mathjax="")))
   else {
-    options.updateSandbox(key,lvalue,value,ivalue)
+    options
   }
 }
 
