@@ -75,9 +75,6 @@ public function processContent( inName : string, outName : string, content : str
     }
 
     process( inName, outName, searchDirs, content, icontent, xopts, mopts, firstTime)
-      fun() {
-        processContent(inName,outName,content,opts,False,continue) // redo!
-      }
       fun(html) {
         continue(html,inName,outName,mopts)
       }
@@ -97,7 +94,6 @@ val rxCurDir = regex(@"^(\.)(?=[\\/])")
 function process( inName : string, outName : string, searchDirs : list<string>,
                   content : string, icontent : string,
                   xopts : options, mopts : options, firstTime : bool,
-                  redo : () -> io (),
                   continue : (string) -> io () ) : io ()
 {
 
@@ -127,7 +123,7 @@ function process( inName : string, outName : string, searchDirs : list<string>,
 
   texFiles.split("\n").list + texRefer.split("\n").list
 
-  continue("")
+  continue(tex)
 }
 
 // Fixup locations in warnings:
