@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -17,27 +17,18 @@ import options
 import optionsSandbox
 import optionsMath
 
-external import {
-  js locs "./locales"
-}
-
-external normalizeLocale( lang : string ) : string {
-  js inline "locs.getLocaleInfo(#1).langid"
-}
-
 public function fromMeta( opts : options, mdata : metadata ) : options {
-  //opts = opts0(metadata = opts0.metadata + mdata)
   mdata.foldl(opts) fun(options : options, kv : (string,string)) {
     val (key,xvalue) = kv
     options.update( key, xvalue, mdata )
   }
 }
 
-function update( options : options, key : string, xvalue : string, mdata : metadata ) : options {  
+function update( options : options, key : string, xvalue : string, mdata : metadata ) : options {
   val lvalue = xvalue.toLower
   val value  = if (lvalue=="none" || lvalue=="clear" || lvalue=="false") then "" else xvalue
   val ivalue = value.parseInt.maybe(~1,id)
-  val bvalue = (value!="" && value!="0") 
+  val bvalue = (value!="" && value!="0")
 
   //trace("from meta: " + key + "=" + value)
   if   (key=="title")  options(title=value)
@@ -63,20 +54,17 @@ function update( options : options, key : string, xvalue : string, mdata : metad
     }
     if (value.bool) then options(bibStyle=Bst(value,"")) else options
   }
-  elif (key=="csl-style") { 
-    val cslname = if (value.extname.isEmpty && value.dirname.isEmpty) 
+  elif (key=="csl-style") {
+    val cslname = if (value.extname.isEmpty && value.dirname.isEmpty)
                    then lvalue.replaceAll(" ","-") // normalize CSL style name
                    else value
     // we need to log here since we don't always 'read' the cls if the bibs are unchanged
     if (cslname.bool) {
-      //log("files", cslname.defaultExt(".csl"))
-      //log("files", "madoko.csl")
-      //log("files", "locales-en-US.xml")
-      options(bibStyle=Csl(cslname,"")) 
+      options(bibStyle=Csl(cslname,""))
     }
     else options
   }
-  elif (key=="locale") { options(locale=normalizeLocale(value)) }  
+  elif (key=="locale") { options(locale=value) }
   elif (key=="html-header") options(htmlHeader=if(value=="") then "" else options.htmlHeader.appendNL(value))
   elif (key=="css-header") options(cssHeader=if(value=="") then "" else options.cssHeader.appendNL(value))
   elif (key=="html-footer") options(htmlFooter=if(value=="") then "" else options.htmlFooter.appendNL(value))
@@ -90,7 +78,7 @@ function update( options : options, key : string, xvalue : string, mdata : metad
   elif (key=="tex-section-num") options(texSectionNum=(value!=""))
   elif (key=="fragment-start" || key=="extract-start") options(extractStart=xvalue)
   elif (key=="fragment-end" || key=="extract-end") options(extractEnd=xvalue)
-  
+
   elif (key=="cite-style") {
     if (lvalue=="clear" || lvalue=="none") then options(citestyle = Nothing)
     elif (lvalue=="") then options
@@ -100,9 +88,9 @@ function update( options : options, key : string, xvalue : string, mdata : metad
         options
       }
       Just(cs) -> options(citestyle=Just(cs))
-    }      
+    }
   }
-  elif (key=="cite-all") options(citeAll=(value!="")) 
+  elif (key=="cite-all") options(citeAll=(value!=""))
   elif (key=="embed" || key=="embed-limit") options(embedLimit=if (value=="") then 0 elif (value=="true") then 1024 else (ivalue*1024))
   elif (key=="section-depth") options(sectionMax=ivalue)
   elif (key=="section-base") options(sectionBase=ivalue)
