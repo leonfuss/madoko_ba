@@ -255,9 +255,6 @@ function blockCode( cap : matched, context : blockContext ) : block  {
   val source = cap.groups[1].replaceAll(rxindent4,"")
   Code(source, "",
           if (!(context.pedantic || context.bench)) then attrsNone.addClass("pre-indented") else attrsNone)
-  //if (context.bench)
-  // then Code(cap.groups[1].replaceAll(rxindent4,""))
-  // else Div([], parseAttrs("","pre",cap.groups[1].replaceAll(rxindent4,"")))
 }
 
 function blockFencedCode( cap : matched, context : blockContext ) {
@@ -567,9 +564,6 @@ function adjustAttrs( b : block, adjust : (attrs : attrs) -> attrs ) : block
     Table( header, columnAttrs, cells, attrs) -> Table( header, columnAttrs, cells, adjust(attrs))
     Div( content, attrs) -> Div( content, adjust(attrs))
     Source( text, input, attrs) -> Source( text, input, adjust(attrs))
-    //DefLink( id, link) ->
-    //DefFootnote( id, content) ->
-    //Empty() ->
     Special( name, value, attrs) ->  Special(name,value, adjust(attrs))// Special blocks, like [TOC] or [FOOTNOTES]
     _ -> b
   }

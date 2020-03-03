@@ -140,7 +140,7 @@ public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : strin
   val lkind  = kind.toLower
   val class  = "math-" + lkind
   val attrsd = context.applyDefaults("span",attrs.addClass(class))
-  val mode   = if (attrsd.hasBoolKey("math-full") || attrsd.hasBoolKey("snippet-needpdf") || attrsd.hasBoolKey("math-needpdf")) then Full else Plain
+
   //ptxt = if (attrs.hasClass("mathpre")) then mathPre(txt) else txt
   val txt    = txt0.trimLines
   val texcmd = if (kind=="Inline")
@@ -639,9 +639,7 @@ public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs =
   val lkind  = kind.toLower
   val class  = "math-" + lkind
   val attrsd = context.applyDefaults("span",attrs.addClass(class))
-  val mode   = if (attrsd.hasBoolKey("math-full") || attrsd.hasBoolKey("snippet-needpdf") || attrsd.hasBoolKey("math-needpdf")) then Full else Plain
-  //ptxt = if (attrs.hasClass("mathpre")) then mathPre(txt) else txt
-  // val txt    = txt0.trimLines
+
   val texcmd = if (kind=="Inline")
                 then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
                 else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)

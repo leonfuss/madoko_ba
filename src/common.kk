@@ -211,60 +211,12 @@ public function newLink( href : string, title : string = "", linkattrs : attrs =
        linkid)
 }
 
-// Info for static math based on images
-public struct mathinfo (
-  imageName : string, // name of the image
-  page      : int,    // dvi/pdf rendering page (used for caching)
-  height    : double, // total height in pt (72.27pt = 1inch) (might be scaled already)
-  width     : double, // width in pt
-  depth     : double, // depth in pt (relative to baseline)
-  iheight   : double, // the image native height in pt
-  iwidth    : double, // the image native width in pt
-  bboxFuzz  : double, // bbox margin in pt
-  size      : int,    // length of the image data
-  imageData : string, // data-url encoding or ""
-  originalData: string // the `imageData` may be compressed due to svg-path sharing; this was the original full image
-)
 
 // Info for files to embed. Used in a browser
 public struct embedinfo (
   embedName : string,
   embedData : string  // data-url or text content
 )
-
-
-public type mathrender {
-  con Png
-  con Svg
-}
-
-
-public function show( m : mathrender ) : string {
-  match(m) {
-    Svg -> "svg"
-    Png -> "png"
-  }
-}
-
-public function showMime( m : mathrender ) {
-  match(m) {
-    Svg -> "image/svg+xml"
-    Png -> "image/png"
-  }
-}
-
-
-public type mathkind {
-  Plain
-  Full
-}
-
-public function show( m : mathkind ) : string {
-  match(m) {
-    Plain -> "plain"
-    Full  -> "full"
-  }
-}
 
 
 /* --------------------------------------
