@@ -31,23 +31,12 @@ public struct options(
   sanitize : bool = False, // never output user defined html and attributes
   xmp      : bool = False, // only process markdown between xmp tags
   full     : maybe<bool> = Nothing, // generate a full html/latex file instead of a snippet
-  tex      : bool = False,  // generate latex file too
-  pdf      : bool = False,  // generate pdf file too
-  texzip   : bool = False,  // generate tex zip for a submission
+  tex      : bool = True,   // generate latex file
   rebuild  : bool = False,  // always rebuild bibtex, math etc.
   sandbox  : bool = False,  // run in a sandbox: only allow reading/writing from a subdirectory
   prelude  : string = "prelude", // standard prelude definitions
 
   title    : string = "",  // html title
-  css      : string = "madoko.css",  // link to css style
-  scripts  : string = "",  // link to javascript files
-  scriptsx  : string = "",  // link to javascript files loaded at the end
-  htmlHeader: string= "",  // literal html header
-  cssHeader: string = "",  // literal css header
-  jsHeader : string = "",  // inline javascript header
-  htmlFooter: string= "",  // literal html footer
-  jsFooter : string = "",  // inline javascript footer
-  htmlMeta : string = "name=\"viewport\" content=\"initial-scale=1.0\"",  // html meta tags
   texHeader: string= "",   // literal tex header
   texHeaderx: string= "",  // literal tex header in non-math mode only
   texDocHeader: string= "",   // literal tex header after begin{document}
@@ -129,13 +118,9 @@ val optionsDesc : list<option<commandOptions>>
       Option( "v", ["verbose"], oflag(fun(o,v) { o(verbose = if (v) then o.verbose + 1 else 0) }),     "Be more verbose"),
       Option( "",  ["odir"],    creq(fun(co,s) { co(outputDir=s) },"DIR"), "Write output files to the specified directory" ),
       Option( "",  ["xmp"],     oflag(fun(o,v) { o(xmp = v) }),       "Only process markdown between <xmp> tags"),
-      Option( "",  ["tex"],     oflag(fun(o,v) { o(tex = v) }),       "Generate a LaTeX file too"),
-      Option( "",  ["pdf"],     oflag(fun(o,v) { o(pdf = v, tex = if (v) then True else o.tex) }),  "Generate PDF using LaTeX"),
-      Option( "",  ["texzip"],  oflag(fun(o,v) { o(texzip = v, tex = if (v) then True else o.tex, pdf = if (v) then True else o.pdf, lineNo = 0) }), "Generate TeX zip for submission"),
-      Option( "",  ["convert-tex"], cflag(fun(co,v) { co(convertTex=v) }), "Convert input from TeX to Markdown"),
+      Option( "",  ["tex"],     oflag(fun(o,v) { o(tex = v) }),       "Generate a LaTeX file"),
 
       Option( "f", ["fragment"], oflag(fun(o,v) { o(full=Just(!v)) }), "Generate a fragment instead of a full document"),
-      Option( "",  ["logo"],     oflag(fun(o,v) { o(logo=v) }),        "Generate a logo at the end of the document" ),
       Option( "",  ["sanitize"], oflag(fun(o,v) { o(sanitize = v) }), "Always escape or suppress user defined html"),
       Option( "" , ["sandbox"],  oflag(fun(o,v) { o(sandbox=v) }),    "Run in a sandbox for secure server execution"),
       Option( "",  ["pedantic"], oflag(fun(o,v) { o(pedantic = v) }), "Pedantic mode"),

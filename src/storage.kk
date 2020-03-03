@@ -13,6 +13,8 @@
 // code as possible between client and server.
 //
 // It also used to resolve includes. i.e., [INCLUDE=/filename].
+//
+// We keep this sandboxing to eventually use it for the LSP implementation 
 module storage
 
 import std/path
