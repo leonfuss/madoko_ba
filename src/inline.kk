@@ -35,7 +35,6 @@ public rectype inlineContext {
                  metadata   : dict<string>,
                  mathinfos  : dict<mathinfo>,
                  embedinfos : dict<embedinfo>,
-                 citestyle  : citestyle,
                  xsanitize  : bool,
                  bench      : bool,
                  verbose    : int,
@@ -102,10 +101,6 @@ public function fmtCodePlain( context : inlineContext, txt : string, startline :
   (context.xfmtCodePlain)(context,txt,startline)
 }
 
-//public function fmtCodeHilite( context : inlineContext, txt : string, startLine : bool = True ) : (string) {
-//  (context.xfmtCodeHilite)(context,txt,startLine)
-//}
-
 public function fmtCodeToken( context: inlineContext, classes : list<string>, txt : string, lang : string, attrs : attrs ) : string {
   (context.xfmtCodeToken)(context,classes,txt,lang,attrs)
 }
@@ -148,7 +143,6 @@ public function copy( self : inlineContext,
                        metadata: dict<string> = self.metadata,
                        mathinfos : dict<mathinfo> = self.mathinfos,
                        embedinfos : dict<embedinfo> = self.embedinfos,
-                       citestyle : citestyle = self.citestyle,
                        sanitize : bool = self.sanitize,
                        bench : bool = self.bench,
                        verbose : int = self.verbose,
@@ -173,7 +167,7 @@ public function copy( self : inlineContext,
                        fmt : formatter = self.fmt  ) : inlineContext
 {
   InlineContext( grammar,links,labels,footnotes,defaults,metadata,mathinfos,embedinfos,
-                 citestyle,sanitize,bench,verbose,mathStatic,highlight,starBold,sandbox,prettyAlign,
+                 sanitize,bench,verbose,mathStatic,highlight,starBold,sandbox,prettyAlign,
                  xfmtCmd,xfmtEscape,xfmtLink,xfmtFootnote,xfmtTable,
                  xfmtEnv, xfmtCodePlain, /* xfmtCodeHilite, */
                  xfmtCodeToken, xfmtLineInfo, xfmtCodeTable,

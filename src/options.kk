@@ -100,13 +100,11 @@ public struct options(
   texSectionNum: bool = False, // use tex section numbering
 
   bib      : string = "",  // bibliography definition files (.bib)
-  locale   : string = "en-US", // language
 
   packages : string = "",  // link to latex packages (.sty)
   packagesx: string = "",        // packages in non-math mode only
   docClass : string = "",        // latex document class (.cls)
 
-  citestyle     : maybe<citestyle> = Nothing,
   citeAll       : bool = False,
   tocDepth      : int  = 3, // max. depth for inclusion in the table of contents
   headingDepth  : int  = 3, // default depth where headings are numbered

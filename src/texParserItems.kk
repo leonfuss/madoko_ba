@@ -891,8 +891,7 @@ function texQuot( quot : string, cap : matched, context : texContext ) : string 
 }
 
 function texTheBibliography( cap : matched, context : texContext ) : string {
-  val numcite = ".bib-" + context.citestyle.mode.show
-  "~ Begin Bibliography { " + numcite +
+  "~ Begin Bibliography { " + 
     " ; caption:" + cap.groups[1].unbrace.quote +
     (if (context.bststyle.bool) then " ; data-style:" + context.bststyle.quote else "") +
     " }\n" + (cap.groups[2] + "\n\n").parse(context) +

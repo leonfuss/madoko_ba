@@ -137,7 +137,6 @@ rectype blockContext {
   // and the current "grammar".
   BlockContext( grammar : grammar<block,blockContext>,
                 listGrammar : grammar<block,blockContext>,
-                citestyle : citestyle,
                 metadata : dict<string>,
                 bench   : bool,
                 pedantic : bool,
@@ -481,12 +480,12 @@ function columnStyle( style : string ) : attrs {
 
 // Parse text into blocks
 public function parseBlocks( src : string, lineNo : int, lineMap : lineMap,
-                             citestyle : citestyle = citeAuto, mdata : dict<string>,
+                             mdata : dict<string>,
                              bench : bool = False,
                              pedantic : bool = False
                              )  : list<block>
 {
-  val bcontext = BlockContext(blockGrammar,blockListGrammar,citestyle,mdata, bench,pedantic, False, lineNo, lineMap)
+  val bcontext = BlockContext(blockGrammar, blockListGrammar, mdata, bench, pedantic, False, lineNo, lineMap)
   parseBlocks(bcontext,src)
 }
 

@@ -29,7 +29,6 @@ function update( options : options, key : string, xvalue : string, mdata : metad
   val ivalue = value.parseInt.maybe(~1,id)
   val bvalue = (value!="" && value!="0")
 
-  //trace("from meta: " + key + "=" + value)
   if   (key=="title")  options(title=value)
   elif (key=="prelude") options(prelude=value)
   elif (key=="css")    options(css=if (value=="") then "" else options.css + ";" + value)
@@ -42,17 +41,10 @@ function update( options : options, key : string, xvalue : string, mdata : metad
   elif ((key=="heading-depth" || key=="header-depth") && ivalue >= 0) options(headingDepth = ivalue)
   elif ((key=="heading-base" || key=="header-base" || key=="base-header-level") && ivalue >= 0) options(headingBase = ivalue)
   elif (key=="document-class" || key=="doc-class") options(docClass=value)
-  //elif (key=="bib" || key=="bibliography" || key=="bib-data") options(bib=if (value=="") then "" else options.bib + ";" + value)
   elif (key=="bib" || key=="bibliography" || key=="bib-data") {
     if (value!="") log("files", value.changeExt(".bib"))
     options(bib=if (value=="") then "" else options.bib + ";" + value);
   }
-  elif (key=="locale") { options(locale=value) }
-  elif (key=="html-header") options(htmlHeader=if(value=="") then "" else options.htmlHeader.appendNL(value))
-  elif (key=="css-header") options(cssHeader=if(value=="") then "" else options.cssHeader.appendNL(value))
-  elif (key=="html-footer") options(htmlFooter=if(value=="") then "" else options.htmlFooter.appendNL(value))
-  elif (key=="js-header") options(jsHeader=if(value=="") then "" else options.jsHeader.appendNL(value))
-  elif (key=="js-footer") options(jsFooter=if(value=="") then "" else options.jsFooter.appendNL(value))
   elif (key=="tex-header") options(texHeader =if(value=="") then "" else options.texHeader.appendNL(value))
   elif (key=="tex-header-") options(texHeaderx =if(value=="") then "" else options.texHeaderx.appendNL(value))
   elif (key=="tex-doc-header") options(texDocHeader =if(value=="") then "" else options.texDocHeader.appendNL(value))
@@ -72,7 +64,6 @@ function update( options : options, key : string, xvalue : string, mdata : metad
   elif (key=="line-no") options(lineNo=ivalue)
   elif (key=="line-no-web") options(lineNoWeb = (lvalue=="true"))
   elif (key=="pretty-align") options(prettyAlign=ivalue)
-  elif (key=="logo") options(logo=(lvalue=="true"))
   elif (key=="refer") { log("filesRefer",value); options }
   elif (key=="copy-styles") options(copyStyles=(value!=""))
   elif (key.startsWith("math")) {

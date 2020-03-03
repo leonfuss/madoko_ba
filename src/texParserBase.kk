@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -23,18 +23,17 @@ import entity
 import texCommon
 
 /* --------------------------------------
- The context for latex elements 
+ The context for latex elements
 ---------------------------------------- */
 public alias texRule = rule<string,texContext>
 
 public rectype texContext {
-  // The parse context for latex elements. 
+  // The parse context for latex elements.
   TexContext( grammar   : grammar<string,texContext>, 
-              citestyle : citestyle = citeAuto, 
               bststyle  : string,
               ignore    : bool = True,
               name      : string = "",
-              texparse  : (context:texContext, input:string) -> string )                 
+              texparse  : (context:texContext, input:string) -> string )
 }
 
 
@@ -55,13 +54,13 @@ public val stdPackages = ["iftex","etoolbox","xkeyval","xcolor","mdframed","grap
                    "css","array","longtable","enumitem","booktabs","hyperref","pdfcomment","wrapfig","madoko",
                    "amsmath","amsfonts","amssymb","stmaryrd","textcomp","pifont",
                    // the following should really not be included as they clash with the standard ones
-                   "inputenc","fontenc","ae","aecompl","enumerate", 
+                   "inputenc","fontenc","ae","aecompl","enumerate",
                    // the next ones are just superfluous
                    "color",
                   ].join(";")
 
 public function unbrace(s : string ) : string {
-  if (s.startsWith("{") &&  (s.indexOf("}") == s.length-1)) 
+  if (s.startsWith("{") &&  (s.indexOf("}") == s.length-1))
    then s.substr(1,s.length-2) else s
 }
 
@@ -70,7 +69,7 @@ public function quote( s : string ) : string {
   val hasdquot = s.contains("\"")
   val hassquot = s.contains("\'")
   if (s.contains("\"")) then {
-    if (s.contains("\'")) 
+    if (s.contains("\'"))
      then "\"" + s.replaceAll("\"","&quot;") + "\""
      else "'" + s + "'"
   }
@@ -128,7 +127,7 @@ val metadataGrammar = [
   MRule(regex(@"\\title\b\s*" + texargg), ["Title"], metaTexValue, metaEmpty ),
   MRule(regex(@"\\subtitle\b\s*" + texargg), ["Sub Title"], metaTexValue, metaEmpty ),
   MRule(regex(@"\\date\b\s*" + texargg), ["Title Note"], metaTexValue, metaEmpty ),
-  MRule(regex(@"\\bibliographystyle\b\s*" + texargg), ["Bib Style"], metaValueBibStyle, metaEmpty ),  
+  MRule(regex(@"\\bibliographystyle\b\s*" + texargg), ["Bib Style"], metaValueBibStyle, metaEmpty ),
   MRule(regex(@"\\bibliography\b\s*" + texargg), ["Bibliography"], metaValueBib, metaKeep ),
   MRule(regex(@"\\authorinfo\b\s*" + texargg + @"\s*" + texargg + @"\s*" + texargg), ["Author","Address","Email"], metaTexValue3, metaEmpty ),
   MRule(regex(@"\\(?:IEEEauthorblockN)\b\s*" + texargg), ["Author"], metaTexValue, metaEmpty ),
@@ -143,7 +142,7 @@ val metadataGrammar = [
 
 
 function metaEmpty( cap : matched ) : string {
-  " " 
+  " "
 }
 
 function metaKeep( cap : matched ) : string {
@@ -192,7 +191,7 @@ function metaOptionValue( cap : matched, _context ) : list<string> {
 
 function texMeta( key, value ) {
   val rvalue = value.unbrace.replaceAll(rxMetaNL, "\n    ").trim
-  if (rvalue=="") 
+  if (rvalue=="")
    then ""
    else key.unbrace.fill(12) + ": " + rvalue
 }
@@ -208,10 +207,10 @@ public function texDocClass( cap : matched, context : texContext ) : string {
   val comment  = [ "<!-- LaTeX conversion",
                    "  Drag&Drop further .tex/.bib/.cls/.sty/.bst or image files in the editor window",
                    "  Conversion reference at: http://research.microsoft.com/en-us/um/people/daan/madoko/doc/reference.html#texconv",
-                   "-->"                                 
+                   "-->"
                  ].join("\n")
-  val mdata0 = if (docClass=="beamer") 
-                then ["[INCLUDE=presentation]","Reveal Theme: sky"] 
+  val mdata0 = if (docClass=="beamer")
+                then ["[INCLUDE=presentation]","Reveal Theme: sky"]
                 else zipWith(["Doc Class"], metaOptionValue(cap,context), texMeta)
   val (mdata1,content0) = extractMeta( cap.groups[3], context, mdata0 )
   val mdata2 = mdata1 + [if (docClass == "book") then "" else "Heading Base: 2","Logo        : True"]
@@ -225,9 +224,9 @@ public function texDocClass( cap : matched, context : texContext ) : string {
                           "    % * Move commands that are not used in math under 'Tex Header*' metadata",
                           "    % * Move commands specific to math in a '~ MathDefs' block",
                           "    ",
-                          header.trim.indent4].join("\n")] // 
+                          header.trim.indent4].join("\n")] //
                        //"\n<!-- LaTeX definitions; use ~ MathDefs for commands needed for mathematics -->" +
-                       //"\n~ TexRaw\n" + header + "\n~\n\n" 
+                       //"\n~ TexRaw\n" + header + "\n~\n\n"
       (ccap.groups[2].parse(context), [comment] + mdata2 + hdata)
     }
   }
@@ -246,4 +245,3 @@ function extractMeta( text0 : string, context, mdata0 : list<string> ) : (list<s
   })
   (mdata, content)
 }
-

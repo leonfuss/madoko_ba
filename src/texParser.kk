@@ -217,7 +217,6 @@ val texGrammar : grammar<string,texContext> = [
   Rule("texgroup",    regex(@"^\{" + texargs + @"\}" ), texGroup ),
   Rule("texcmd2",     regex(@"^\\(" + texcmd2 + @")\b\s*" + optargs + texarg + optargs + texarg), texIgnore ),
   Rule("texcmd1",     regex(@"^\\(" + texcmd1 + @")\b\s*" + optargs + texarg), texIgnore ),
-  //Rule("texcmd0",     regex(@"^\\(" + texcmd0 + @")\b\s*" + optargs), texIgnore ),
   Rule("texcmd",      regex(@"^(\\[a-zA-Z@]+)\b\s*(" + optargs + ")"), texGenericCommand ),
 
   Rule("texchar",     regex(@"^\\[^a-zA-Z]"), texChar ),
@@ -231,31 +230,17 @@ val texGrammar : grammar<string,texContext> = [
 
 
 // Parse TeX elements and return Markdown
-public function parseTex( txt : string, id: string = "", citestyle : citestyle = citeAuto, bststyle: string = "", verbose : bool = False, ignore : bool = True  ) : string
+public function parseTex( txt : string, id: string = "", bststyle: string = "", verbose : bool = False, ignore : bool = True  ) : string
 {
   val normTxt = txt.replaceAll(regex(@"\r\n?"),"\n").replaceAll(regex(@"\t"),"   ")
-                 /*
-                 // strip initial comments
-                 .replaceAll(regex(@"^(\s|%.*)+"),"")
-                 // strip off comments
-                 // little conservative but % sometimes occurs inside url's
-                 .replaceAll(rxTexComment, fun(cap) {
-                    if (cap.groups[1] != "") { "\\begin{comment}\n" + cap.groups[1] + "\\end{comment}\n" }
-                    elif (cap.groups[2] != "") { cap.groups[2] }
-                    else ""  // end-of-line comment
-                  })
-                  */
-  val md = contextParse(TexContext(texGrammar,citestyle,bststyle,ignore,id,contextParse), normTxt)
+  val md = contextParse(TexContext(texGrammar,bststyle,ignore,id,contextParse), normTxt)
   if (verbose) then trace( "TeX to Markdown:\n" + md )
   md
 }
 
-// val rxTexComment = regex(@"^((?:[ \t]*%.*\r?\n)+)|(\\%|\\url\{[^\}]*\})|%.*",multiline=True)
-
 function contextParse( context : texContext, txt : string ) : string {
   if (txt=="") then "" else {
     parseTexAcc(context,builder(), txt.unbrace)
-    // if (!newlineToSpace) then res else res.replaceAll(rxNl," ")
   }
 }
 
