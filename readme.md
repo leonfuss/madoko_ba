@@ -1,45 +1,40 @@
-Title 	  	: Madoko
-Author      : Daan Leijen
-
-# Madoko -- a Fast Scholarly Markdown Processor
+# Madoko -- a Fast Scholarly Markdown Processor (now optimized for paper processing)
 
 Madoko is a fast javascript [Markdown] processor written in [Koka]
 It started out as a demo program for the new, strongly typed, [Koka] language and
 the name comes from "_Ma_\/rk\/_do_\/wn in _Ko_\/ka".
 
-Madoko can both be run local as a command-line program, or as a full
-online experience on [Madoko.net] with storage and collaboration through [dropbox] or [github].
+**This fork of Madoko is optimized for processing papers (LaTeX only)**
+In particular:
+
+- it has to be used from the command line
+- no html output is generated
+- no svg/png images are generated for math
+- local client and webserver have been completely removed
+- bibliography is not processed
+- original LaTeX commands are used where possible
+
+This significantly speeds up processing for larger documents and simplifies conformance to style requirements imposed by conferences.
 
 ## Using Madoko
 
-The best experience is online at: <https://www.madoko.net>
-
-Otherwise, you can run Madoko on the command line:
+You can run Madoko on the command line:
 
 * Ensure you have [Node.js](http://nodejs.org) installed on your system.
 
-* Open a command line window and run the Node package manager to install Madoko:
+* At the moment you need to build Madoko yourselves and run `npm link` in the `lib` folder.
+  Information on building can be found in the `Jakefile.js`
 
-  `npm install madoko -g`
-
-and you are done. Translating a markdown document is done simply as:
+Translating a markdown document is done simply as:
 
 * `madoko -v mydoc.mdk`
 
-which generates `mydoc.html`. The `-v` flag gives more verbose output.
+which generates `mydoc.tex`. The `-v` flag gives more verbose output.
 To also generate a PDF file, use:
 
-* `madoko --pdf -vv --odir=out mydoc`
+* `madoko -v --odir=out mydoc`
 
-where `--odir` puts all output files in the `out` directory. To generate
-a PDF, you need to have LaTeX installed on your system, which is also
-required for mathematics and bibliographies. We recommend the
-full [TeXLive] LaTeX system as it is available for Windows, Linux and
-MacOSX, and is used on the [Madoko.net] server as well.
-
-[TexLive]:    https://www.tug.org/texlive
-[MacTeX]:     http://tug.org/mactex/
-[Madoko.net]: https://www.madoko.net
+where `--odir` puts all output files in the `out` directory.
 
 ## Madoko philosophy
 
