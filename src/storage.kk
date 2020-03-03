@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013-2015 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -11,6 +11,8 @@
 // operations only provide accesss to a global object of files which is
 // *not* persistent. This code is mainly to ensure we can share as much
 // code as possible between client and server.
+//
+// It also used to resolve includes. i.e., [INCLUDE=/filename].
 module storage
 
 import std/path
