@@ -70,6 +70,9 @@ task("madoko", [], function(cs) {
   jake.logger.log("> " + cmd);
   jake.exec(cmd, {interactive: true}, function() {
     jake.cpR(path.join(sourceDir,"cli.js"), outputDir);
+    ["monarch/monarch.js"].forEach( function(contrib) {
+      jake.cpR(path.join(contribDir,contrib), outputDir);
+    });
     complete();
   })
 },{async:true});
