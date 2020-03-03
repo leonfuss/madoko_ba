@@ -11,7 +11,6 @@ import std/path
 import std/dict
 
 external include {
-  cs file "process-inline.cs"
   js file "process-inline.js"
 }
 

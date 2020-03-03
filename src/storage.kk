@@ -20,7 +20,6 @@ import std/log
 import std/regex
 
 external include {
-  cs file "storage-inline.cs"
   js file "storage-inline.js"
 }
 
