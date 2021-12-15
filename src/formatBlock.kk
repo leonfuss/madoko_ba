@@ -126,28 +126,6 @@ function lineText( b :  block ) {
   }
 }
 
-function getLineInfo( attrs : attrs ) : string {
-  match(attrs.hasKey("data-line")) {
-    Just(info) -> {
-      val lineno = parseLineInfo(info).snd
-      if (lineno <= 0 || info.startsWith("0;")) then "" else "%mdk-data-line={" + info + "}\n"
-    }
-    Nothing    -> ""
-  }
-}
-
-function deriveFirstLineInfo( attrs : attrs ) : attrs {
-  match(attrs.hasKey("data-line-first")) {
-    Just(info) -> attrsNone.addKeyval("data-line-first",info)
-    Nothing -> {
-      match(attrs.hasKey("data-line")) {
-        Just(info) -> attrsNone.addKeyval("data-line-first",info)
-        Nothing -> attrsNone
-      }
-    }
-  }
-}
-
 /* --------------------------------------
    Output a single block element
 ---------------------------------------- */
@@ -196,34 +174,27 @@ public function formatBlock( context : formatContext, block : block ) : div stri
       parentAttrs.logDataLine
       match(input) {
         Pre       -> {
-          context.inlineContext.fmtCode("pre",txt,parentAttrs.deriveFirstLineInfo)
+          context.inlineContext.fmtCode("pre",txt)
         }
         Math      -> {
           //("\\[" + txt.trim.escapeMath(context.fmt) + "\\]")
           // context.logLineInfo(parentAttrs)
-          context.inlineContext.fmtMath(True,txt,parentAttrs.deriveMathAttrs,getLineInfo(parentAttrs))
+          context.inlineContext.fmtMath(True,txt,parentAttrs.deriveMathAttrs)
         }
         MathPre   -> {
           // ("\\[" + txt.mathPreBlock.escapeMath(context.fmt) + "\\]")
           // context.logLineInfo(parentAttrs)
-          context.inlineContext.fmtMath(True,txt.mathPreBlock,parentAttrs.deriveMathAttrs,getLineInfo(parentAttrs))
+          context.inlineContext.fmtMath(True,txt.mathPreBlock,parentAttrs.deriveMathAttrs)
         }
-        MathPoly -> {
-          context.inlineContext.fmtPoly(txt, parentAttrs, getLineInfo(parentAttrs))
-        }
-        MathDefs  -> {
-          val lineInfo = getLineInfo(parentAttrs)
-          val mtxt = txt.escapeMath(context.fmt)
-          lineInfo + mtxt
-        }
+        MathPoly  -> context.inlineContext.fmtPoly(txt, parentAttrs)
+        MathDefs  -> txt.escapeMath(context.fmt)
         Markdown  -> context.inlineContext.formatInline(txt,parentAttrs)
         Raw(monly)-> {
           if (context.inlineContext.sanitize) then ""
           else match(monly) {
             Nothing -> txt + "\n"
             Just(FmtTex) | context.fmt == FmtTex -> {
-              val lineInfo = getLineInfo(parentAttrs)
-              "%mdk-begin-texraw\n" + lineInfo + txt + "\n"
+              txt + "\n"
             }
             Just(f) | f == context.fmt -> txt + "\n"
             _       -> "\n"

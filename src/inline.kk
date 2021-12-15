@@ -190,8 +190,7 @@ public function logDataLine( attrs ) : () {
 // Parse _inline_ markdown elements and return formatted html
 public function formatInline( context : inlineContext, txt : string, attrs : attrs = attrsNone ) : string
 {
-  val (linePrefix,lineNo) = parseLineInfo(attrs.lookupKey("data-line",""))
-  formatInlineAcc(context,builder(), txt, lineNo, linePrefix )
+  formatInlineAcc(context,builder(), txt)
 }
 
 public function parseLineInfo( lineInfo : string ) : (string,int) {
@@ -202,24 +201,11 @@ public function parseLineInfo( lineInfo : string ) : (string,int) {
 }
 val rxDataLine = regex( @"^(.*:)?(\d+)$")
 
-
-// Here the current position is available.
-function formatInlineAcc( context : inlineContext, acc : builder<h>, txt : string,
-                          lineNo : int, linePrefix : string ) : st<h> string
+function formatInlineAcc( context : inlineContext, acc : builder<h>, txt : string) : st<h> string
 {
   if (txt=="") return acc.build
-  val location  = linePrefix + lineNo.show
-  val lineInfo  = if (lineNo <= 0) then "" else context.fmtLineInfo( location )
-  if (lineNo > 0) {
-    val texLineInfo = "%mdk-data-line={" + location + "}"
-    log("math-plain", texLineInfo)
-    log("math-full", texLineInfo)
-    log("aux", texLineInfo)
-    logLocation(location)  // for warnings
-  }
   val (s,next,_) = matchRules(context.grammar,context,txt,id)
-  val newLineNo = if (lineNo <= 0) then 0 else lineNo + txt.substr(0,next).count("\n")
-  formatInlineAcc(context, acc.append(lineInfo).append(s), txt.substr1(next), newLineNo, linePrefix )
+  formatInlineAcc(context, acc.append(s), txt.substr1(next))
 }
 
 

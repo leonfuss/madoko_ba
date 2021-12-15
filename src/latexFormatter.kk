@@ -54,7 +54,8 @@ public function fmtLatexMathCmd(context : inlineContext, cmd : string, txt : str
 
 public function fmtLatexLineInfo( context : inlineContext, lineInfo : string ) : string {
   //"%mdk-data-line={" + lineInfo + "}\n"
-  "\\mdline{" + lineInfo + "}"
+  //"\\mdline{" + lineInfo + "}"
+  ""
 }
 
 public function fmtLatexEscape( context : inlineContext, txt : string, allowEntity : bool ) : string {

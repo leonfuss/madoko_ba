@@ -128,7 +128,7 @@ function inlineMathBlock( cap : matched, context : inlineContext ) : string {
   context.fmtMath(True,cap.groups[1],attrsd)
 }
 
-public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : string, attrs : attrs = attrsNone, lineInfo : string = "" ) : string {
+public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : string, attrs : attrs = attrsNone) : string {
   val (kind,left,right,rightx) =
     if (attrs.hasClass("snippet"))
      then (if (isDisplay) then "Display" else "Inline","","","")
@@ -141,8 +141,8 @@ public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : strin
 
   val txt    = txt0.trimLines
   if (kind=="Inline")
-    then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
-    else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)
+    then context.fmtMathCmd("span", left+txt+right+rightx, attrsd)
+    else context.fmtMathEnv("div",  left+txt+right+rightx, attrsd)
 }
 
 function logMathLocation(digest: string, attrs: attrs) {
@@ -193,7 +193,7 @@ function inlineTag( cap : matched, context : inlineContext ) : string {
 
 function inlineTagX( tag : string, context : inlineContext ) : string {
   if (context.sanitize || !(context.fmt.isFmtHtml))
-   then ""
+   then "\\mdline{}"
    else tag
 }
 
@@ -607,7 +607,7 @@ function fmtSpan( context : inlineContext, txt0 : string, attrs : attrs ) : stri
   }
 }
 
-public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs = attrsNone, lineInfo : string = "" ) : string {
+public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs = attrsNone) : string {
   // add newline because of comments in latex (and we do use trimLines on the content)
   val (kind,left,right,rightx) = ("Display","\\[" + (if (attrs.name.isEmpty) then "" else "\\label{" + attrs.name + "}"),"\n\\]","%mdk\n")
 
@@ -631,8 +631,8 @@ public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs =
   val attrsd = context.applyDefaults("span",attrs.addClass(class))
 
   if (kind=="Inline")
-    then context.fmtMathCmd("span", left+lineInfo+txt+right+rightx, attrsd)
-    else context.fmtMathEnv("div",  left+lineInfo+txt+right+rightx, attrsd)
+    then context.fmtMathCmd("span", left+txt+right+rightx, attrsd)
+    else context.fmtMathEnv("div",  left+txt+right+rightx, attrsd)
 }
 
 function mathUnline( txt : string ) {
