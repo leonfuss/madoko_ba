@@ -33,7 +33,7 @@ public function processContent( inName : string, outName : string, content : str
                           opts : commandOptions, firstTime : bool = False,
                           continue : (output:string,inputName:string,outputName:string,options:options) -> io () ) : io ()
 {
-  val styleDir = opts.installDir + "/../styles"
+  val styleDir = opts.stylesDir
   val searchDirs = [inName.dirname,outName.dirname,styleDir]
   val opts0  = if (inName.endsWith(".xmp.html") || inName.endsWith(".xmp"))
                 then (opts.options)(xmp = True,full = opts.options.full.maybe(Just(False),Just)) else opts.options
