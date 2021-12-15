@@ -441,7 +441,11 @@ function columns( row : string, context : blockContext, ofs: int ) : row {
 }
 
 val rxCellCodeInline = @"(?:``(?:[^`]|`(?!`))*``|`(?:[^`]|``)*`)"
-val rxCellTexInline1 = @"(?:\$(?!\{)(?:(?:[^\\\$\|]|\\[\s\S])+)\$)"
+// here we dropped the not-pipe. In consequence, you cannot write a table row
+// like
+//   | 400$ | 500$ |
+// anymore!
+val rxCellTexInline1 = @"(?:\$(?!\{)(?:(?:[^\\\$]|\\[\s\S])+)\$)"
 val rxCellTexInline2 = @"(?:\$\{(?:(?:[^\\\$]|\\[\s\S])+)\$)"
 val rxCellContent = @"(?:\\.|"+ rxCellTexInline1 + @"|" + rxCellTexInline2 + @"|" + rxCellCodeInline + @"|[^\\|+]|\+ *(?![-=]))"
 val rxCell = regex(@"(?:^ *(?:\||\+(?=[-=])))?(" + rxCellContent + @"+(?:[|]+|[+]+(?= *[-=])|$))")
