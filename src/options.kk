@@ -127,7 +127,7 @@ val optionsDesc : list<option<commandOptions>>
       Option( "",  ["pedantic"], oflag(fun(o,v) { o(pedantic = v) }), "Pedantic mode"),
       Option( "",  ["bench"],    oflag(setbench),                     "For benchmarking: turn off numbering, etc."),
       Option( "",  ["installdir"], creq(fun(co,s) { co(installDir=s) },"DIR"), "Set installation directory explicitly"),
-      Option( "",  ["stylesdir"], creq(fun(co,s) { co(stylesDir=s) },"DIR"), "Set the directory of the styles explicitly (defaults to installDir/styles)"),
+      Option( "",  ["stylesdir"], creq(fun(co,s) { co(stylesDir=s) },"DIR"), "Set the directory of the styles explicitly (defaults to <installDir>/styles)"),
       Option( "r", ["rebuild"],  oflag(fun(o,v) { o(rebuild=v) }),    "Force rebuild bibliography, math, etc."),
       Option( "",  ["prelude"],  oreq(fun(o,s) { o(prelude=s) }, "FILE"), "Include <FILE> at start of the document"),
       Option( "",  ["verbose-max"], oreq(fun(o,s) { o(verboseMaxLine=parseIntDefault(s,78)) }, "LEN"), "Maximum line length for messages" ),
@@ -187,8 +187,9 @@ function fullUsageInfo() {
 // sanitize options
 function check( cmdOptions : commandOptions ) : io commandOptions
 {
-  val opt2 = cmdOptions(installDir=if (cmdOptions.installDir=="") then programPath().dirname else cmdOptions.installDir)
-  opt2(stylesDir=if (opt2.stylesDir=="") then opt2.installDir + "/../styles" else opt2.stylesDir)
+  val installDirectory = if (cmdOptions.installDir=="") then programPath().dirname else cmdOptions.installDir
+  val stylesDirectory = if (cmdOptions.stylesDir=="") then installDirectory + "/../styles" else cmdOptions.stylesDir
+  cmdOptions(installDir=installDirectory, stylesDir=stylesDirectory)
 }
 
 
