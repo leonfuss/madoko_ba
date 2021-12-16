@@ -133,12 +133,16 @@ public function fmtMath( context : inlineContext, isDisplay : bool, txt0 : strin
     if (attrs.hasClass("snippet"))
      then (if (isDisplay) then "Display" else "Inline","","","")
     elif (isDisplay)
-     then ("Display","\\[" + (if (attrs.name.isEmpty) then "" else "\\label{" + attrs.name + "}"),"\n\\]","%mdk\n")  // add newline because of comments in latex (and we do use trimLines on the content)
+     then ("Display","\\[" + (if (attrs.name.isEmpty) then "" else "\\label{" + attrs.name + "}"),"\n\\]","%mdk-136\n")  // add newline because of comments in latex (and we do use trimLines on the content)
      else ("Inline","$","$","")
   val lkind  = kind.toLower
   val class  = "math-" + lkind
   val attrsd = context.applyDefaults("span",attrs.addClass(class))
 
+  // This is very dangerous! Trimming lines from potentially generated code
+  // might result in
+  //   foo%mdk\n -> foo%mdk
+  // TODO not sure what it means to NOT trim lines here
   val txt    = txt0.trimLines
   if (kind=="Inline")
     then context.fmtMathCmd("span", left+txt+right+rightx, attrsd)
@@ -193,7 +197,7 @@ function inlineTag( cap : matched, context : inlineContext ) : string {
 
 function inlineTagX( tag : string, context : inlineContext ) : string {
   if (context.sanitize || !(context.fmt.isFmtHtml))
-   then "\\mdline{}"
+   then "\\mdline{inlineTagX}"
    else tag
 }
 
@@ -353,7 +357,7 @@ function fmtCodeEscaped( context : inlineContext, txt : string, format : (string
 
         val innerEsc   = context.fmtCmd("span", context.formatInline(cap.groups[3]),
                            context.formatDefaults(attrsNone.addClass( "code-escaped" )))
-        val escaped    = formatToken(classes2,innerEsc).replaceAll("%mdk\n","{}")
+        val escaped    = formatToken(classes2,innerEsc).replaceAll("%mdk-356\n","{}")
         val fmt3       = "<ESCAPED width=" + width.show + ">" + escaped + "</ESCAPED>"
 
         val (fmt4,st3) = codeEscape(src.substr1(cap.next),st2)
@@ -535,7 +539,13 @@ function inlineLinkRef( isImage : bool, spaces : string, nbsp : string, txt : st
           }
           elif (!(attrs.empty)) {
             // Span element
-            spaces + context.fmtSpan(txt,attrs)
+            // TODO if we replace the mdline with a newline, this will be stripped somehow.
+            // CONJECTURE: trim is invoked in the result, removing the newline, but keeping the %...
+            // BUT WHY?
+            //
+            // Also alternatively removing %mdk-565 doesn't help since then there might be
+            // to many newlines (for instance in effekt-standalone/Theorem4.4).
+            spaces + context.fmtSpan(txt,attrs) + "\\mdline{inlineLinkRef}"
           }
           else {
             // warn for missing labels or links
@@ -609,7 +619,7 @@ function fmtSpan( context : inlineContext, txt0 : string, attrs : attrs ) : stri
 
 public function fmtPoly( context : inlineContext, txt0 : string, attrs : attrs = attrsNone) : string {
   // add newline because of comments in latex (and we do use trimLines on the content)
-  val (kind,left,right,rightx) = ("Display","\\[" + (if (attrs.name.isEmpty) then "" else "\\label{" + attrs.name + "}"),"\n\\]","%mdk\n")
+  val (kind,left,right,rightx) = ("Display","\\[" + (if (attrs.name.isEmpty) then "" else "\\label{" + attrs.name + "}"),"\n\\]","%mdk-614\n")
 
   // idea: have special math mode where we
   // 1) compute the alignment

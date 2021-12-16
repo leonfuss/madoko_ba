@@ -177,13 +177,9 @@ public function formatBlock( context : formatContext, block : block ) : div stri
           context.inlineContext.fmtCode("pre",txt)
         }
         Math      -> {
-          //("\\[" + txt.trim.escapeMath(context.fmt) + "\\]")
-          // context.logLineInfo(parentAttrs)
           context.inlineContext.fmtMath(True,txt,parentAttrs.deriveMathAttrs)
         }
         MathPre   -> {
-          // ("\\[" + txt.mathPreBlock.escapeMath(context.fmt) + "\\]")
-          // context.logLineInfo(parentAttrs)
           context.inlineContext.fmtMath(True,txt.mathPreBlock,parentAttrs.deriveMathAttrs)
         }
         MathPoly  -> context.inlineContext.fmtPoly(txt, parentAttrs)
@@ -194,7 +190,7 @@ public function formatBlock( context : formatContext, block : block ) : div stri
           else match(monly) {
             Nothing -> txt + "\n"
             Just(FmtTex) | context.fmt == FmtTex -> {
-              txt + "\n"
+              "%mdk-197\n" + txt + "\n"
             }
             Just(f) | f == context.fmt -> txt + "\n"
             _       -> "\n"

@@ -54,8 +54,7 @@ public function fmtLatexMathCmd(context : inlineContext, cmd : string, txt : str
 
 public function fmtLatexLineInfo( context : inlineContext, lineInfo : string ) : string {
   //"%mdk-data-line={" + lineInfo + "}\n"
-  //"\\mdline{" + lineInfo + "}"
-  ""
+  "\\mdline{fmtLatexLineInfo}"
 }
 
 public function fmtLatexEscape( context : inlineContext, txt : string, allowEntity : bool ) : string {
@@ -226,7 +225,7 @@ public function fmtLatexPolyTable( context : inlineContext, ct : codeTable, attr
   val colDefs = cols.map(fun(col) { "\\column{C" + col.show + "}{l}%mdk\n" })
   val rowss = ct.rows.map(fun(row) { fmtLatexPolyRow(row, 1) })
   val content =
-      "\\begin{mdmathpre}\\begin{pmboxed}%mdk\n" + colDefs.join("") + rowss.join("\\\\%mdk\n") + "%mdk\n\\end{pmboxed}\\end{mdmathpre}%mdk"
+      "\\begin{mdmathpre}\\begin{pmboxed}%mdk\n" + colDefs.join("") + rowss.join("\\\\%mdk-2281\n") + "%mdk-2282\n\\end{pmboxed}\\end{mdmathpre}%mdk"
   texEnv("",content,attrs.addClass("para-block"))
 }
 
@@ -563,7 +562,7 @@ function applyBlock( body : string, isBlock : bool, attrs : attrs ) : string {
     Just(info) -> "\n%mdk-data-line={" + info + "}"
     Nothing    -> ""
   }
-  if (isBlock) then lineinfo + "\n" + body.trim + "%mdk\n" else body
+  if (isBlock) then lineinfo + "\n" + body.trim + "%mdk-565\n" else body
 }
 
 function applyCmd( body : string, kvs : dict<string>, key : string ) : string {
@@ -718,7 +717,7 @@ function cssPagebreak( value : string ) {
       }
     }
   }
-  if (cmd.isEmpty) then "" else (cmd + "%mdk\n")
+  if (cmd.isEmpty) then "" else (cmd + "%mdk-720\n")
 }
 
 // -----------------------------------------------------------------------------
