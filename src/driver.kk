@@ -27,7 +27,7 @@ import includes
 
 public struct runners()
 
-val standardTexStyles = ["ellipse.sty","options.sty","longbox.sty","longfbox.sty","madoko2.sty"]
+val standardTexStyles = ["ellipse.sty","options.sty","longbox.sty","longfbox.sty","madoko2.sty","latex-madoko.sty"]
 
 public function processContent( inName : string, outName : string, content : string,
                           opts : commandOptions, firstTime : bool = False,
