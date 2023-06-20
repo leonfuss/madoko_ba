@@ -303,14 +303,14 @@
 % ---------------------------------------------------
 
 % expressions for various css units
-\newcommand*\dimeval[1]{\dimexpr #1\relax}
-\newcommand*\dimpx[1]{#1\px}
-\newcommand*\dimrem[1]{#1\dim@rem}
-\newcommand*\dimch[1]{#1\dim@ch}
-\newcommand*\dimvh[1]{#1\textheight}
-\newcommand*\dimvw[1]{#1\textwidth}
-\newcommand*\dimvmin[1]{\dimeval{\dimmin\textwidth\textheight * #1}}
-\newcommand*\dimvmax[1]{\dimeval{\dimmax\textwidth\textheight * #1}}
+\providecommand\dimeval[1]{\dimexpr #1\relax}
+\providecommand\dimpx[1]{#1\px}
+\providecommand\dimrem[1]{#1\dim@rem}
+\providecommand\dimch[1]{#1\dim@ch}
+\providecommand\dimvh[1]{#1\textheight}
+\providecommand\dimvw[1]{#1\textwidth}
+\providecommand\dimvmin[1]{\dimeval{\dimmin\textwidth\textheight * #1}}
+\providecommand\dimvmax[1]{\dimeval{\dimmax\textwidth\textheight * #1}}
 
 \newlength\dim@rem
 \newlength\dim@ch
