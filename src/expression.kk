@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013-2015 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -30,7 +30,7 @@ public type expr  {
   Var( v : string, display : string )
 }
 
-public type constant {  
+public type constant {
   Int( i :int )
   Bool( b : bool )
   String( s : string )
@@ -41,11 +41,11 @@ public type constant {
 
 
 public function evaluate( expr : string, eval : expr -> <exn|e> a, default : a ) : e a {
-  //trace("evaluate: '" + expr + "'")
+  trace("evaluate: '" + expr + "'")
   val mbres = unsafeTotal( fun() { parseExpr(expr) } )
   match(mbres) {
     Just(res) | res.snd.trim.isEmpty -> {
-      catch( fun() { eval(res.fst) }, fun(exn) { 
+      catch( fun() { eval(res.fst) }, fun(exn) {
         warning(exn.show)
         default
       })
@@ -128,7 +128,7 @@ function binop( c1 : constant, c2: constant, op : string, iop : (int,int) -> exn
   val msg = "comparing values of different types (" + op + ") on (" + c1.show + ") and (" + c2.show + ")"
   match(c1) {
     Int(i1) -> match(c2.cint) {
-      Int(i2) -> iop(i1,i2)      
+      Int(i2) -> iop(i1,i2)
       _       -> error(msg)
     }
     String(s1) -> match(c2) {
@@ -229,14 +229,14 @@ function parseAttrSelector() : parser<expr> {
 val parseExpr = unsafeTotal(parseIf)
 
 function parseIf() : div parser<expr> {
-  ( string(@"@if\b") *> parseBinary() <* string("@then") <*> parseAtom() <*> 
+  ( string(@"@if\b") *> parseBinary() <* string("@then") <*> parseAtom() <*>
       ( (string(@"@else") *> parseAtom()) || succeed(Const(Null)) ) )
     .map( fun(res) { If(res.fst.fst, res.fst.snd, res.snd) })
   ||
   parseBinary()
 }
 function parseBinary() : div parser<expr> {
-  parseUnary() <$ 
+  parseUnary() <$
   ( (string(@"(and\b|or\b|(~~|:|==|!=|>=|<=|>|<|&&|\|\||[~\^\|\$\*]?=)(?=[\s\w/""']))") <*> (fun(s) { parseExpr(s) }))
       .map2( fun(op,arg2) { return fun(arg1) { BinOp(op,arg1,arg2) }} )
    || succeed( id )
@@ -260,17 +260,17 @@ val parseVar : parser<expr> =
   string(@"[\w\-]+").map( fun(s) { Var(s.normalizeId, s) } ) ||
   satisfy(@"&([\w\-]+);").map( fun(cap) { Var(cap.groups[1].normalizeId, cap.groups[1])} )
 
-val parseCInt : parser<constant> = 
+val parseCInt : parser<constant> =
   string(@"\d+").map(fun(s) { Int(parseInt(s).maybe(0,id)) } )
 
-val parseBool : parser<constant> = 
-  string(@"true\b").map(fun(s) { Bool(True) } ) 
+val parseBool : parser<constant> =
+  string(@"true\b").map(fun(s) { Bool(True) } )
   ||  string(@"false\b").map(fun(s) { Bool(False) } )
 
-val parseString : parser<constant> = 
+val parseString : parser<constant> =
   string(@"'(?:[^\\']|\\[.\n])*'|""(?:[^\\""]|\\[.\n])*""").map(fun(s) { String(s.unquote) } )
 
-val parseRegex : parser<expr> = 
+val parseRegex : parser<expr> =
   satisfy(@"/((?:[^\\/\n]|\\.)*)/(i)?").map(fun(cap) { UnOp("regexp" + cap.groups[2], Const(String(cap.groups[1]))) })
 
 val parseModes : parser<expr> =
@@ -292,7 +292,7 @@ val parseMode : parser<expr> =
 alias parser<a> = string -> div maybe<(a,string)>
 
 function map( p : parser<a>, f : a -> b ) : parser<b> {
-  return fun(s) { 
+  return fun(s) {
     match(p(s)) {
       Nothing -> Nothing
       Just(x) -> Just((f(x.fst),x.snd))
@@ -301,7 +301,7 @@ function map( p : parser<a>, f : a -> b ) : parser<b> {
 }
 
 function map2( p : parser<(a,b)>, f : (a,b) -> c ) : e parser<c> {
-  p.map( fun(x) { f(x.fst, x.snd)}) 
+  p.map( fun(x) { f(x.fst, x.snd)})
 }
 
 
@@ -381,11 +381,11 @@ function satisfy( r: string ) : parser<matched> {
   return fun(s) {
     match(s.find(regex(@"^\s*" + r, ignoreCase=True))) {
       Just(cap) -> {
-        //trace("satisfy: " + cap.matched)
+        trace("satisfy: " + cap.matched)
         Just((cap,s.substr1(cap.next)))
       }
       Nothing -> {
-        //trace("satisfy fail: /" + r + "/ on: " + s.substr(0,8)) 
+        trace("satisfy fail: /" + r + "/ on: " + s.substr(0,8))
         Nothing
       }
     }

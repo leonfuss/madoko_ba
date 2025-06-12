@@ -75,6 +75,56 @@ public struct options(
 );
 
 
+public function show( opts : options ) : string {
+  [
+    "Options:",
+    "  version: " + opts.version,
+    "  bench: " + opts.bench.show,
+    "  verbose: " + opts.verbose.show,
+    "  verboseMaxLine: " + opts.verboseMaxLine.show,
+    "  pedantic: " + opts.pedantic.show,
+    "  sanitize: " + opts.sanitize.show,
+    "  xmp: " + opts.xmp.show,
+    "  full: " + opts.full.maybe("None", show),
+    "  tex: " + opts.tex.show,
+    "  rebuild: " + opts.rebuild.show,
+    "  sandbox: " + opts.sandbox.show,
+    "  prelude: " + opts.prelude,
+    "  title: " + opts.title,
+    "  texHeader: " + opts.texHeader,
+    "  texHeaderx: " + opts.texHeaderx,
+    "  texDocHeader: " + opts.texDocHeader,
+    "  texDocHeaderx: " + opts.texDocHeaderx,
+    "  texFooter: " + opts.texFooter,
+    "  texSectionNum: " + opts.texSectionNum.show,
+    "  bib: " + opts.bib,
+    "  packages: " + opts.packages,
+    "  packagesx: " + opts.packagesx,
+    "  docClass: " + opts.docClass,
+    "  citeAll: " + opts.citeAll.show,
+    "  tocDepth: " + opts.tocDepth.show,
+    "  headingDepth: " + opts.headingDepth.show,
+    "  headingBase: " + opts.headingBase.show,
+    "  sectionMax: " + opts.sectionMax.show,
+    "  sectionBase: " + opts.sectionBase.show,
+    "  starBold: " + opts.starBold.show,
+    "  prettyAlign: " + opts.prettyAlign.show,
+    "  logo: " + opts.logo.show,
+    "  highlight: " + opts.highlight.show,
+    "  hilitelang: " + opts.hilitelang,
+    // "  metadata: " + opts.metadata.show,
+    // "  embedinfos: " + opts.embedinfos.show,
+    "  embedLimit: " + opts.embedLimit.show,
+    "  lineNo: " + opts.lineNo.show,
+    "  lineNoWeb: " + opts.lineNoWeb.show,
+    "  copyStyles: " + opts.copyStyles.show,
+    // "  lineMap: " + opts.lineMap.show,
+    "  extractStart: " + opts.extractStart,
+    "  extractEnd: " + opts.extractEnd
+  ].join("\n")
+}
+
+
 public struct commandOptions(
   showVersion : bool = False,
   convertTex  : bool = False,

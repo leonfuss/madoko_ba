@@ -61,17 +61,17 @@ function escapeMath( txt : string, fmt : formatter ) : string {
 ---------------------------------------- */
 
 // Format blocks into html and parse and format all inline elements
-public function formatBlocks( context : formatContext, blocks : list<block> ) : string
+public function formatBlocks( context : formatContext, blocks : list<block> ) : <console> string
 {
   unsafeNoDiv{ formatBlocksX(context,blocks) }
 }
 
-public function formatBlocksX( context : formatContext, blocks : list<block> ) : div string
+public function formatBlocksX( context : formatContext, blocks : list<block> ) : <div, console> string
 {
   formatBlocksAcc(context,blocks,builder())
 }
 
-function formatBlocksAcc( context : formatContext, blocks : list<block>, acc : builder<h> ) : <st<h>,div> string
+function formatBlocksAcc( context : formatContext, blocks : list<block>, acc : builder<h> ) : <st<h>,div, console> string
 {
   match(blocks) {
     Nil -> acc.build
@@ -130,7 +130,7 @@ function lineText( b :  block ) {
    Output a single block element
 ---------------------------------------- */
 
-public function formatBlock( context : formatContext, block : block ) : div string
+public function formatBlock( context : formatContext, block : block ) : <div, console> string
 {
   match(block) {
     Para(txt,attrs) -> {
@@ -236,7 +236,7 @@ public function formatBlock( context : formatContext, block : block ) : div stri
 
     Div(content,attrs) -> {
       val txt = formatBlocksX(context,content)
-      // trace(txt)
+      trace(txt)
       val rnd = attrs.input
       match (attrs.hasKey("bib-id")) {
         Just(bibid) -> {
@@ -283,7 +283,7 @@ function deriveMathAttrs( parentAttrs : attrs ) {
 
 function formatRows( rows : list<row>,
                       colstyles : list<attrs>, context : formatContext,
-                      attrs : attrs, isBody : bool ) : list<row>
+                      attrs : attrs, isBody : bool ) : <console> list<row>
 {
   if (rows.isNil) then return Nil
 
@@ -299,7 +299,7 @@ function formatRows( rows : list<row>,
     kvs
   }
 
-  function formatRow( colNum : int, row : list<cell>, cols : list<attrs>, rowstyle : attrs ) : list<cell> {
+  function formatRow( colNum : int, row : list<cell>, cols : list<attrs>, rowstyle : attrs ) : <console> list<cell> {
     match(row) {
       Cons(cell,rs) -> {
         match(cols) {

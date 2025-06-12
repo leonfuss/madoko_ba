@@ -121,7 +121,7 @@ function parsePlainMeta( txt : string, fmt : formatter, lineMap: lineMap, metada
         }
         Nothing -> match(txt.find(rxMeta)) {
           Nothing   -> {
-            //trace("metadata end: " + txt.substr(0,100))
+            trace("metadata end: " + txt.substr(0,100))
             (metadata.reverse,txt,lines)
           }
           Just(cap) -> {
@@ -236,7 +236,7 @@ function evaluateBool( cond : string, modes : mdict<h,constant>, mdata : cmetada
     }
   }
   val b = evaluate( cond, fun(e) { evalExpr(e,lookup).bool }, False)
-  // trace("evaluate: " + cond + " -> " + b.show + " (recursive=" + recursive.show + ")" )
+  trace("evaluate: " + cond + " -> " + b.show + " (recursive=" + recursive.show + ")" )
   if (recursive)
    then False // a self-dependent support block evaluates to false
    else b
@@ -246,7 +246,7 @@ function evaluateBool( cond : string, modes : mdict<h,constant>, mdata : cmetada
 function lookupMode( modes : mdict<h,constant>, mode : string, mdata : cmetadata, current : list<string>, verbose : int ) : <div,st<h>> maybe<constant> {
   match(modes[mode]) {
     Just(c) -> {
-      //trace("pre-evaluated: " + mode + ": " + c.show)
+      trace("pre-evaluated: " + mode + ": " + c.show)
       Just(c)
     }
     Nothing -> {
@@ -256,7 +256,7 @@ function lookupMode( modes : mdict<h,constant>, mode : string, mdata : cmetadata
             if (key != mode) then Nothing
              else {
                val res = String(raw)
-               //trace("found var: " + key + ": " + raw)
+               trace("found var: " + key + ": " + raw)
                modes[mode] := res
                Just(res)
              }
@@ -264,17 +264,17 @@ function lookupMode( modes : mdict<h,constant>, mode : string, mdata : cmetadata
           Support(cond,body,_lineInfo) -> {
             if (body.containsKey(mode)) then {
               if (evaluateBool(cond,modes,mdata,verbose,current)) {
-                //trace(" look inside: " + cond)
+                trace(" look inside: " + cond)
                 lookupMode(modes,mode,body,current,verbose)
               }
               else {
-                //trace(" support " + cond + " contains " + mode + " but is false: " + lineInfo )
+                // trace(" support " + cond + " contains " + mode + " but is false: " + lineInfo )
                 Nothing
               }
             }
             else {
-               //trace(" support " + cond + " does not contain " + mode + ": " + lineInfo )
-               //trace(" -> " + body.map(fun(ckey) { match(ckey) { Key(k) -> k; _ -> "<support>" } }).join(","))
+               // trace(" support " + cond + " does not contain " + mode + ": " + lineInfo )
+               // trace(" -> " + body.map(fun(ckey) { match(ckey) { Key(k) -> k; _ -> "<support>" } }).join(","))
                Nothing
             }
           }

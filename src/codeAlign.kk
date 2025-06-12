@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------
   Copyright 2013 Microsoft Corporation.
- 
+
   This is free software; you can redistribute it and/or modify it under the
   terms of the Apache License, Version 2.0. A copy of the License can be
   found in the file "license.txt" at the root of this distribution.
@@ -25,7 +25,7 @@ public alias crow = list<ccell>;
 public struct ccell(
   span: int,
   center: bool,
-  content: string 
+  content: string
 )
 
 public function foldCodeTable( ct : codeTable, st : a, f : (string,a) -> (string,a) ) : codeTable {
@@ -52,7 +52,7 @@ public function foldCodeTable( ct : codeTable, st : a, f : (string,a) -> (string
   ct( rows = foldRows(ct.rows,st ).fst )
 }
 
-public function map( ct : codeTable,  f : (string,int) -> string ) : codeTable {
+public function map( ct : codeTable,  f : (string,int) -> <console> string ) : <console> codeTable {
   ct( rows = ct.rows.map( fun(row) { row.mapIndexed( fun(idx,ccell) { ccell(content = f(ccell.content,idx)) }) }) )
 }
 
@@ -68,16 +68,16 @@ function show( ccell : ccell ) : string {
 }
 
 
-public function codeAlign( txt : string, sep : int = 2 ) : codeTable
+public function codeAlign( txt : string, sep : int = 2 ) : <console> codeTable
 {
   val rxSep = regex( @" {" + sep.show + ",}" )
   val ls    = txt.replaceAll("<br>","\n").lines.list
-  //trace(ls.join("\n"))
+  trace(ls.join("\n"))
   val colss = ls.map fun(line){ findAlignColumns(line,rxSep) }
-  val acols = colss.merge 
-  //trace("\nalign cols: " + acols.map(show).join(","))
+  val acols = colss.merge
+  trace("\nalign cols: " + acols.map(show).join(","))
   val rows  = zipWith(ls,colss) fun(line,cols){ makeRow(acols,line,cols,sep) }
-  // trace("\nrows:\n" + rows.map(fun(row) { row.map(show).join(",") }).join("\n"))
+  trace("\nrows:\n" + rows.map(fun(row) { row.map(show).join(",") }).join("\n"))
 
   CodeTable( acols.length + 1, rows )
 }
@@ -149,7 +149,7 @@ function makeRow( acols : list<int>, line : string, lineCols : list<int>, sep : 
   /*
   trace("makeRow: " + acols.map(show).join(",") + ": " + lineCols.map(show).join(",") + "\n" +
          " line:\n" + line + "\n" +
-         " parts:\n  " + 
+         " parts:\n  " +
            parts1.map(fun(p) { p.fst.show + ": " + p.snd }).join("\n  "))
   */
   val rxEndSpaces = regex( string(sep,' ') + "$")
@@ -168,17 +168,17 @@ function alignParts( acols : list<int>, parts : list<(int,string)>, rxEndSpaces 
       val nextcol = getColumn(col,text,rest)
       val (spanCols,afterCols) = acols.getSpan(nextcol)
       val span = spanCols.length+1
-      val ccells = if (text.isWhite) 
+      val ccells = if (text.isWhite)
        then {
          val pre = string(col,' ')
-         val ws = splitColumns( pre, col, spanCols )         
-         ws.map( fun(_) { Ccell(1,False, " ") }) 
+         val ws = splitColumns( pre, col, spanCols )
+         ws.map( fun(_) { Ccell(1,False, " ") })
        }
        else {
          val stext = text.replace(rxEndSpaces," ")
-         [Ccell(span,False,stext)]  
+         [Ccell(span,False,stext)]
        }
-      
+
       ccells + alignParts(afterCols, rest, rxEndSpaces)
     }
   }
@@ -227,4 +227,3 @@ function subPart( line : string, col : int, len : int = line.length ) : string {
   val col1 = htmlColumn(line,col + len)
   line.substr( col0, (col1 - col0) )
 }
-

@@ -32,14 +32,14 @@ public function test( s : string = "code_blocks", moreargs = "" ) {
 
   markdownFiles("-v --tex --installdir=src --odir=" + outputDir + " " + moreargs + " " + input)
     fun(outText,_input,output,_options) {
-    //trace("-----\n" + outText + "\n-----")
+    trace("-----\n" + outText + "\n-----")
     val targetText = target.readTextFileDef("")
     val outStrip = outText.replaceAll(regex(@"\s"),"")
                       //.replaceAll(regex(@"class=""indent"""),"")
     val targetStrip = targetText.replaceAll(regex(@"\s"),"")
     if (outStrip != targetStrip) {
       trace("\n*** test failed ***")
-      //trace(targetText + "\n***")
+      trace(targetText + "\n***")
 
       var i := 0;
       while { outStrip[i] == targetStrip[i] } { i := i+1 }

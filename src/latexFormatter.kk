@@ -65,7 +65,7 @@ public function fmtLatexEscape( context : inlineContext, txt : string, allowEnti
         txt.replaceAll(regex(@"\$"),@"$\mbox{\$}$").replaceAll(regex(@"\|"),@"$\mbox{\char124}$")
 }
 
-public function fmtLatexFootnote(context : inlineContext, id : string, fn : footnote ) : string {
+public function fmtLatexFootnote(context : inlineContext, id : string, fn : footnote ) : console string {
   texCmdX( "\\mdfootnote" + fn.footnoteNum.braced, ((fn.footnoteContent)(context)).trimLeft, attrsNone, [("id","back-fn-" + id)])
 }
 

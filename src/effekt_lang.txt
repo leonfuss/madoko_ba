@@ -1,0 +1,165 @@
+Core Concepts
+
+Algebraic Effects and Handlers: Effekt allows definition of custom control effects that are tracked by the type system.
+Effect Safety: Effects are declared in function return types to enforce handling requirements.
+Lightweight Effect Polymorphism: Higher-order functions can accept blocks with arbitrary effects.
+Bidirectional Effects: Effect operations can themselves use other effects.
+
+Syntax
+Type Definitions
+effektCopy// Sum type (variants)
+type Direction { 
+  Horizontal() 
+  Vertical() 
+}
+
+// Record type (product)
+record Position(line: Int, col: Int, index: Int)
+
+// Generic record
+record NumH[N](value: N, d: N)
+Effect Definitions
+effektCopy// Simple effect declaration
+effect fileNotFound(path: String): Unit
+
+// Interface style declaration
+interface Logger {
+  def log(msg: String): Unit
+}
+
+// Effect with return value
+effect flip(): Bool
+
+// Effect requiring another effect
+interface Config {
+  def port(): Int / { exc }
+}
+
+// Effect alias
+effect Layout = { Indent, DefaultIndent, Flow }
+Function Definitions
+effektCopy// No effects
+def add(x: Int, y: Int): Int = x + y
+
+// With effects
+def div(n: Double, m: Double): Double / { exc } =
+  if (m == 0.0) do exc("Division by zero") else n / m
+
+// Block parameters (curly braces)
+def foreach[A](l: List[A]) { f: A => Unit }: Unit = { ... }
+
+// Multiple block parameters
+def or[R] { p: => R } { q: => R } = 
+  if (do alt()) { p() } else { q() }
+Variables and Assignment
+effektCopy// Immutable variable
+val x = 10
+
+// Mutable variable
+var count = 0
+count = count + 1
+Control Flow
+effektCopy// If expressions
+if (condition) { ... } else { ... }
+
+// Match expressions
+do Flow() match {
+  case Horizontal() => ...
+  case Vertical() => ...
+}
+
+// Loops via recursive functions or effects
+def many { p: => Unit }: Unit / Parser =
+  or { some { p() } } { () }
+Using Effects
+effektCopy// Invoking an effect
+do fileNotFound("myFile.txt")
+
+// Effect appears in type signature
+def trySomeFile(f: String): Unit / { fileNotFound } = { ... }
+Handling Effects
+effektCopy// Basic handler
+try { ... }
+with fileNotFound { (path: String) => 
+  println("Error " + path) 
+}
+
+// Handler with resumption
+try { ... }
+with fileNotFound { (path: String) =>
+  println("Creating file:" + path)
+  resume(())
+}
+
+// Handler with state
+def writer { p: => Unit / Emit } = {
+  var out = ""
+  try { p(); out } with Emit {
+    def emitText(t) = { out = out ++ t; resume(()) }
+    def emitNewline() = { out = out ++ "\n"; resume(()) }
+  }
+}
+Important Concepts and Patterns
+Effect Requirements vs Side Effects
+In Effekt, effects represent requirements on the calling context, not side effects:
+
+R / { exc } means "requires the exc effect to be handled"
+Pure functions are marked with empty effect set: R / {}
+
+Effect Handling Order
+The order of handlers matters when composing effects:
+effektCopysearchLayout { writer { printer(width, 2) { doc() } } }
+Effect Polymorphism
+Effekt uses contextual effect polymorphism:
+effektCopydef foreach[A](l: List[A]) { f: A => Unit / {} }: Unit / {}
+This means f can use any effects, but they must be handled at the call site.
+Bidirectional Control Flow
+Effects can expose other effects in their implementation:
+effektCopyinterface Config {
+  def port(): Int / { exc }
+}
+When port() is called, both Config and exc effects are introduced.
+Resumable vs Non-resumable Effects
+
+Non-resumable: Control transfers to handler (like exceptions)
+Resumable: Control returns to call site after handling (can be called multiple times)
+
+Effect Transformers
+Handlers that transform one effect into another:
+effektCopydef skipWhitespace[R] { prog: => R / Lexer }: R / Lexer = { ... }
+Common Patterns
+Backtracking
+effektCopydef searchLayout[R] { p : => R / LayoutChoice }: Option[R] =
+  try { Some(p()) }
+  with LayoutChoice {
+    def fail[A]() = None()
+    def choice() = resume(true).orElse { resume(false) }
+  }
+Memoization with Effects
+effektCopydef memo[R] { prog: => R / { need } }: R / { need } = {
+  var store: Store = Nil()
+  try {
+    prog()
+  } with need { (key) =>
+    // Look up key or compute and store
+  }
+}
+Combining Effects
+effektCopyeffect Parser = { Nondet, Lexer }
+Multiple Resumptions
+effektCopywith flip { () => 
+  resume(true).append(resume(false)) 
+}
+Modules and Imports
+effektCopymodule examples/casestudies/prettyprinter
+
+import string
+import regex
+Standard Library
+
+Collections: Lists, Options
+String Operations: String manipulation, regular expressions
+I/O: Console output (println)
+Refs: Mutable references (ref, get, set)
+
+Remember: Effekt is a research language focusing on algebraic effects and handlers, effect safety, and lightweight support for effect polymorphism.

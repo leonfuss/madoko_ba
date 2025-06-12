@@ -84,7 +84,7 @@ public struct blockInfo (
 public function markdown( src : string,
                           options : options = initialOptions0,
                           fmt : formatter = FmtTex
-                        ) : pure (string,options,list<block>,formatContext)
+                        ) : <pure,console> (string,options,list<block>,formatContext)
 {
   if (options.xmp) then markdownXmp(src,options,fmt) else markdownNormal(src,options,fmt)
 }
@@ -130,7 +130,7 @@ public function analyze(
 
 
 // Process only markdown between <xmp> tags
-function markdownXmp( src : string, options : options = initialOptions0, fmt : formatter = FmtTex ) : pure (string,options,list<block>,formatContext)
+function markdownXmp( src : string, options : options = initialOptions0, fmt : formatter = FmtTex ) : <pure,console> (string,options,list<block>,formatContext)
 {
   val commented = "~begin htmlraw\n" + src.replaceAll(rxxmp,"\n~end htmlraw\n$2\n~begin htmlraw\n") + "\n~end htmlraw"
   markdownNormal(commented, options, fmt)
@@ -143,7 +143,7 @@ public function normalizeSource( src : string ) : string {
 }
 
 // Takes source markdown input and returns formatted html
-function markdownNormal( src0 : string, options0 : options = initialOptions0, fmt : formatter = FmtTex ) : pure (string,options,list<block>,formatContext)
+function markdownNormal( src0 : string, options0 : options = initialOptions0, fmt : formatter = FmtTex ) : <pure,console> (string,options,list<block>,formatContext)
 {
   // first normalize the input: all tabs to 4 spaces.
   val (options1,src) = parseMeta(options0,fmt,src0.normalizeSource)
@@ -316,7 +316,7 @@ function labelInfo(elem: (string, label)): referenceInfo {
 
 // TODO change to labelRange
 function labelPosition(label : label) : maybe<position> {
-  match(label.labelAttrs.hasKey("data-line")) { 
+  match(label.labelAttrs.hasKey("data-line")) {
     Just(info) -> {
       val (path, lineno) = parseLineInfo(info)
       Just(Position(path.lastPathSegment, lineno))

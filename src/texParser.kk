@@ -230,7 +230,7 @@ val texGrammar : grammar<string,texContext> = [
 
 
 // Parse TeX elements and return Markdown
-public function parseTex( txt : string, id: string = "", bststyle: string = "", verbose : bool = False, ignore : bool = True  ) : string
+public function parseTex( txt : string, id: string = "", bststyle: string = "", verbose : bool = False, ignore : bool = True  ) : <console> string
 {
   val normTxt = txt.replaceAll(regex(@"\r\n?"),"\n").replaceAll(regex(@"\t"),"   ")
   val md = contextParse(TexContext(texGrammar,bststyle,ignore,id,contextParse), normTxt)
@@ -238,13 +238,13 @@ public function parseTex( txt : string, id: string = "", bststyle: string = "", 
   md
 }
 
-function contextParse( context : texContext, txt : string ) : string {
+function contextParse( context : texContext, txt : string ) : <console> string {
   if (txt=="") then "" else {
     parseTexAcc(context,builder(), txt.unbrace)
   }
 }
 
-function parseTexAcc( context : texContext, acc : builder<h>, txt : string ) : st<h> string
+function parseTexAcc( context : texContext, acc : builder<h>, txt : string ) : <st<h>, console> string
 {
   if (txt=="") return acc.build
   val (s,next,_) = matchRules(context.grammar,context,txt,id)

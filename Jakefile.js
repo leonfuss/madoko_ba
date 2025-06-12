@@ -11,15 +11,14 @@ var fs = require("fs");
 var path = require("path");
 var child = require("child_process");
 
-
 //-----------------------------------------------------
 // Configuration
 //-----------------------------------------------------
-var main       = "madoko";
-var maincli    = "main";
-var sourceDir  = "src";
-var outputDir  = "lib";
-var styleDir   = "styles";
+var main = "madoko";
+var maincli = "main";
+var sourceDir = "src";
+var outputDir = "lib";
+var styleDir = "styles";
 var contribDir = "contrib";
 
 // we compile madoko at this time with an older version of Koka.
@@ -38,76 +37,100 @@ var contribDir = "contrib";
 //
 // > jake compiler VARIANT=release
 
-var kokaDir   = "../koka-0.6"
-var libraryDir= path.join(kokaDir,"lib")
-var kokaExe   = path.join(kokaDir,"out/release/koka-0.6.0-dev")
-var testDir   = "test";
+var kokaDir = "../koka";
+var libraryDir = path.join(kokaDir, "lib");
+var kokaExe = path.join(kokaDir, "out/debug/koka-0.6.0-dev");
+var testDir = "test";
 
-var kokaFlags = "-i" + sourceDir + " -i" + libraryDir + " " + (process.env.kokaFlags || "");
-var kokaCmd = kokaExe + " " + kokaFlags + " -c -o" + outputDir + " --outname=" + main + " "
-
+var kokaFlags =
+  "-i" + sourceDir + " -i" + libraryDir + " " + (process.env.kokaFlags || "");
+var kokaCmd =
+  kokaExe + " " + kokaFlags + " -c -o" + outputDir + " --outname=" + main + " ";
 
 //-----------------------------------------------------
 // Tasks: compilation
 //-----------------------------------------------------
-task("default",["madoko"]);
+task("default", ["madoko"]);
 
-desc(["build madoko.",
-      "  madoko[cs] # generate .NET binary."].join("\n"));
-task("madoko", [], function(cs) {
-  args = ""
-  if (cs) {
-    args = "--target=cs -o" + outputDir + "net"
-  }
-  if (!fileExist(outputDir)) {
-    fs.mkdirSync(outputDir);
-  }
-  fixVersion();
-  var cmd = kokaCmd + " -v " + args + " " + maincli;
-  jake.logger.log("> " + cmd);
-  jake.exec(cmd, {interactive: true}, function() {
-    jake.cpR(path.join(sourceDir,"cli.js"), outputDir);
-    ["monarch/monarch.js"].forEach( function(contrib) {
-      jake.cpR(path.join(contribDir,contrib), outputDir);
+desc(["build madoko.", "  madoko[cs] # generate .NET binary."].join("\n"));
+task(
+  "madoko",
+  [],
+  function (cs) {
+    args = "";
+    if (cs) {
+      args = "--target=cs -o" + outputDir + "net";
+    }
+    if (!fileExist(outputDir)) {
+      fs.mkdirSync(outputDir);
+    }
+    fixVersion();
+    var cmd = kokaCmd + " -v " + args + " " + maincli;
+    jake.logger.log("> " + cmd);
+    jake.exec(cmd, { interactive: true }, function () {
+      jake.cpR(path.join(sourceDir, "cli.js"), outputDir);
+      ["monarch/monarch.js"].forEach(function (contrib) {
+        jake.cpR(path.join(contribDir, contrib), outputDir);
+      });
+      complete();
     });
-    complete();
-  })
-},{async:true});
+  },
+  { async: true },
+);
 
 desc("interactive madoko.");
-task("interactive", [], function(mainmod) {
-  mainmod = mainmod || maincli
-  var cmd = kokaCmd + " -e -p " + mainmod
-  jake.logger.log("> " + cmd);
-  jake.exec(cmd, {interactive: true}, function() { complete(); })
-},{async:true});
+task(
+  "interactive",
+  [],
+  function (mainmod) {
+    mainmod = mainmod || maincli;
+    var cmd = kokaCmd + " -e -p " + mainmod;
+    jake.logger.log("> " + cmd);
+    jake.exec(cmd, { interactive: true }, function () {
+      complete();
+    });
+  },
+  { async: true },
+);
 
 desc("run 'npm install' to install prerequisites.");
-task("config", [], function () {
-  if (!fileExist("node_modules")) {
-    var cmd = "npm install";
-    jake.logger.log("> " + cmd);
-    jake.exec(cmd + " 2>&1", {interactive: true}, function() { complete(); });
-  }
-  else {
-    complete();
-  }
-},{async:true});
+task(
+  "config",
+  [],
+  function () {
+    if (!fileExist("node_modules")) {
+      var cmd = "npm install";
+      jake.logger.log("> " + cmd);
+      jake.exec(cmd + " 2>&1", { interactive: true }, function () {
+        complete();
+      });
+    } else {
+      complete();
+    }
+  },
+  { async: true },
+);
 
 desc("publish madoko locally with npm");
-task("publish", [], function(mainmod) {
-  mainmod = mainmod || maincli
-  var cmd = "pushd lib; npm link; popd"
-  jake.logger.log("> " + cmd);
-  jake.exec(cmd, {interactive: true}, function() { complete(); })
-},{async:true});
-
+task(
+  "publish",
+  [],
+  function (mainmod) {
+    mainmod = mainmod || maincli;
+    var cmd = "pushd lib; npm link; popd";
+    jake.logger.log("> " + cmd);
+    jake.exec(cmd, { interactive: true }, function () {
+      complete();
+    });
+  },
+  { async: true },
+);
 
 //-----------------------------------------------------
 // Tasks: clean
 //-----------------------------------------------------
 desc("remove all generated files.");
-task("clean", function() {
+task("clean", function () {
   jake.logger.log("remove all generated files");
   jake.rmRf(outputDir);
   jake.rmRf(outputDir + "net");
@@ -116,19 +139,24 @@ task("clean", function() {
   jake.rmRf("web/client/lib");
 });
 
-
 //-----------------------------------------------------
 // Tasks: test
 //-----------------------------------------------------
 desc("run tests.\n  test[--extra]    # run tests for extensions.");
-task("test", ["madoko"], function() {
-  testFlags=(process.env.testFlags||"")
-  args = Array.prototype.slice.call(arguments)
-  testCmd = "node test " + testFlags + args.filter(function(s){ return (s.substr(0,2) == "--"); }).join(" ")
-  jake.log("> " + testCmd)
-  jake.exec(testCmd, {printStdout: true, printStderr: true})
+task("test", ["madoko"], function () {
+  testFlags = process.env.testFlags || "";
+  args = Array.prototype.slice.call(arguments);
+  testCmd =
+    "node test " +
+    testFlags +
+    args
+      .filter(function (s) {
+        return s.substr(0, 2) == "--";
+      })
+      .join(" ");
+  jake.log("> " + testCmd);
+  jake.exec(testCmd, { printStdout: true, printStderr: true });
 });
-
 
 //-----------------------------------------------------
 // Tasks: help
@@ -136,7 +164,8 @@ task("test", ["madoko"], function() {
 var usageInfo = [
   "usage: jake target[options]",
   "  <options>        are target specific, like bench[--quick].",
-  ""].join("\n");
+  "",
+].join("\n");
 
 function showHelp() {
   jake.logger.log(usageInfo);
@@ -145,44 +174,48 @@ function showHelp() {
 }
 
 desc("show this information");
-task("help",[],function() {
+task("help", [], function () {
   showHelp();
 });
-task("?",["help"]);
+task("?", ["help"]);
 
 if (process.argv.indexOf("-?") >= 0 || process.argv.indexOf("?") >= 0) {
   showHelp();
-}
-else if (jake.program.opts.tasks) {
+} else if (jake.program.opts.tasks) {
   jake.logger.log(usageInfo);
-};
-
+}
 
 //-----------------------------------------------------
 // Get the version from the package.json file
 //-----------------------------------------------------
 function getVersion() {
-  var content = fs.readFileSync("package.json",{encoding: "utf8"});
+  var content = fs.readFileSync("package.json", { encoding: "utf8" });
   if (content) {
     var matches = content.match(/"version"\s*\:\s*"([\w\.\-]+)"/);
     if (matches && matches.length >= 2) {
       return matches[1];
     }
   }
-  return "<unknown>"
+  return "<unknown>";
 }
 
 function fixVersion(fname) {
-  fname = fname || path.join(sourceDir,"version.kk");
+  fname = fname || path.join(sourceDir, "version.kk");
 
   var version = getVersion();
-  var content1 = fs.readFileSync(fname,{encoding: "utf8"});
+  var content1 = fs.readFileSync(fname, { encoding: "utf8" });
   if (content1) {
-    var content2 = content1.replace(/^(public\s*val\s*version\s*=\s*)"[^"\n]*"/m, "$1\"" + version + "\"")
-                           .replace(/(<span\s+id="version">)[^<\n]*(?=<\/span>)/, "$1" + version)
+    var content2 = content1
+      .replace(
+        /^(public\s*val\s*version\s*=\s*)"[^"\n]*"/m,
+        '$1"' + version + '"',
+      )
+      .replace(/(<span\s+id="version">)[^<\n]*(?=<\/span>)/, "$1" + version);
     if (content1 !== content2) {
-      jake.logger.log("updating version string in '" + fname + "' to '" + version + "'")
-      fs.writeFileSync(fname,content2,{encoding: "utf8"});
+      jake.logger.log(
+        "updating version string in '" + fname + "' to '" + version + "'",
+      );
+      fs.writeFileSync(fname, content2, { encoding: "utf8" });
     }
   }
 }
@@ -191,23 +224,33 @@ function fileExist(fileName) {
   var stats = null;
   try {
     stats = fs.statSync(fileName);
-  }
-  catch(e) {};
-  return (stats != null);
+  } catch (e) {}
+  return stats != null;
 }
 
 // copyFiles 'files' to 'destdir' where the files in destdir are named relative to 'rootdir'
 // i.e. copyFiles('A',['A/B/c.txt'],'D')  creates 'D/B/c.txt'
-function copyFiles(rootdir,files,destdir) {
+function copyFiles(rootdir, files, destdir) {
   rootdir = rootdir || "";
   rootdir = rootdir.replace(/\\/g, "/");
   jake.mkdirP(destdir);
-  files.forEach(function(filename) {
+  files.forEach(function (filename) {
     // make relative
-    var destname = path.join(destdir,(rootdir && filename.lastIndexOf(rootdir,0)===0 ? filename.substr(rootdir.length) : filename));
-    var logfilename = (filename.length > 30 ? "..." + filename.substr(filename.length-30) : filename);
-    var logdestname = (destname.length > 30 ? "..." + destname.substr(destname.length-30) : destname);
+    var destname = path.join(
+      destdir,
+      rootdir && filename.lastIndexOf(rootdir, 0) === 0
+        ? filename.substr(rootdir.length)
+        : filename,
+    );
+    var logfilename =
+      filename.length > 30
+        ? "..." + filename.substr(filename.length - 30)
+        : filename;
+    var logdestname =
+      destname.length > 30
+        ? "..." + destname.substr(destname.length - 30)
+        : destname;
     //jake.logger.log("cp -r " + logfilename + " " + logdestname);
-    jake.cpR(filename,path.dirname(destname));
-  })
+    jake.cpR(filename, path.dirname(destname));
+  });
 }

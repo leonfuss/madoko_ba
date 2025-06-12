@@ -29,15 +29,15 @@ public alias texRule = rule<string,texContext>
 
 public rectype texContext {
   // The parse context for latex elements.
-  TexContext( grammar   : grammar<string,texContext>, 
+  TexContext( grammar   : grammar<string,texContext>,
               bststyle  : string,
               ignore    : bool = True,
               name      : string = "",
-              texparse  : (context:texContext, input:string) -> string )
+              texparse  : (context:texContext, input:string) -> <console> string )
 }
 
 
-public function parse( txt : string, context : texContext ) : string
+public function parse( txt : string, context : texContext ) : <console> string
 {
   (context.texparse)(context,txt)
 }
@@ -116,7 +116,7 @@ val rxNL0 = regex(@"^[ \t]*\r?\n|\r?\n$")
 struct mRule(
   regex: regex,
   keys  : list<string>,
-  values: (cap:matched, context: texContext ) -> list<string>,
+  values: (cap:matched, context: texContext ) -> <console> list<string>,
   replacer: (cap:matched) -> string
 )
 
@@ -174,11 +174,11 @@ function metaValueBib( cap : matched, _context ) : list<string> {
 
 
 
-function metaTexValue( cap : matched, context ) : list<string> {
+function metaTexValue( cap : matched, context ) : <console> list<string> {
   [cap.groups[1].parse(context)]
 }
 
-function metaTexValue3( cap : matched, context ) : list<string> {
+function metaTexValue3( cap : matched, context ) : <console>  list<string> {
   list(1,3).map(fun(i) { cap.groups[i].parse(context) })
 }
 
@@ -202,7 +202,7 @@ function removeSections( txt : string ) : string {
 }
 val rxSection = regex(@"\\(sub)?section\b\*?\s*" + optarg + @"?" + texarg + @"\s*")
 
-public function texDocClass( cap : matched, context : texContext ) : string {
+public function texDocClass( cap : matched, context : texContext ) : <console> string {
   val docClass = cap.groups[2].unbrace.trim
   val comment  = [ "<!-- LaTeX conversion",
                    "  Drag&Drop further .tex/.bib/.cls/.sty/.bst or image files in the editor window",
@@ -234,7 +234,7 @@ public function texDocClass( cap : matched, context : texContext ) : string {
 }
 val rxDocument = regex(@"^([\s\S]*?)\n *\\begin{document}([\s\S]*?)\n *\\end{document}" )
 
-function extractMeta( text0 : string, context, mdata0 : list<string> ) : (list<string>,string) {
+function extractMeta( text0 : string, context, mdata0 : list<string> ) : console (list<string>,string) {
   var mdata := mdata0
   val content = metadataGrammar.foldl( text0, fun(text,mrule) {
     text.replaceAll(mrule.regex, fun(cap) {

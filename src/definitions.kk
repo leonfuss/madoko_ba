@@ -31,9 +31,12 @@ public function parseBody( fcontext : formatContext,
                            metadata : metadata,
                            tocDepth : int,
                            secBase : int,
-                           secDepth : int) :  div (list<block>,formatContext)
+                           secDepth : int) :  <div,console> (list<block>,formatContext)
 {
-  parseDefinitions(fcontext, [Div([],(".madoko; line-adjust:0; line:" + lineNo.show).parseAttrs("body",src))],
+    val attrs = (".madoko; line-adjust:0; line:" + lineNo.show).parseAttrs("body",src)
+    val block = Div([],attrs)
+    // println("definitions.kk:28 - parseBody: Block details:\n" + block.debugBlock())
+    parseDefinitions(fcontext, [block],
                    metadata,tocDepth,secBase,secDepth)
 }
 
@@ -45,7 +48,7 @@ public function parseDefinitions(
                      metadata : metadata,
                      tocDepth : int = 0,
                      secBase : int = 1,
-                     secDepth : int = 6 ) :  div (list<block>,formatContext)
+                     secDepth : int = 6 ) :  <div,console> (list<block>,formatContext)
 {
   if (fcontext.inlineContext.bench)
     then parseDefinitionsBench(fcontext,blocks)
@@ -79,8 +82,11 @@ function parseDefinitionsFull(
                      mdata : metadata,
                      tocDepth : int = 0,
                      secBase : int,
-                     secDepth : int ) :  div (list<block>,formatContext)
+                     secDepth : int ) :  <div,console> (list<block>,formatContext)
 {
+  // println("\n--- parseDefinitionsFull: begin ---")
+  // println("Initial blocks:")
+  // blocks.foreach(fun(b){ println("  " + b.debugBlock("  ", False)) })
   val counters = mdict()
   val nested   = mdict()
   val labels   = mdict()
@@ -95,15 +101,19 @@ function parseDefinitionsFull(
   //val mdefaultAttrs = mdict()
   //mdata.initializeDefaults(mdefaultAttrs,counters,nested)
   val defaultAttrs : rules = rulesFromMeta(mdata)
+  // println("Metadata rules loaded for default attributes")
 
   // process attributes
-  function process( attrs : attrs, previousPar : parinfo, block : block ) : <div,st<_h>> block {
+  function process( attrs : attrs, previousPar : parinfo, block : block ) : <div,console,st<_h>> block {
+    // println("\n--- process called ---")
+    // println("Block: " + block.debugBlock("  ", False))
     val bname = block.blockName
 
     // merge and set default attributes
     val attrsd  = if (!(attrs.defaults)) then attrs
                   else {
                     val attrsy = defaultAttrs.matchRules(bname,attrs)
+                    // println("After matching rules: " + attrsy.show)
                     if (attrsy.name != "" && attrsy.label=="") then attrsy( label = "@"+bname ) else attrsy
                   }
 
@@ -160,7 +170,10 @@ function parseDefinitionsFull(
     }
 
     // render
+    // println("Before setAttrs: " + attrsp.show)
     val rblock = block.setAttrs(attrsp,fcontext)
+    // println("After setAttrs: " + rblock.debugBlock("  ", True))
+
 
     // toc
     match (attrsp.hasKey("toc")) {
@@ -188,7 +201,10 @@ function parseDefinitionsFull(
   }
 
   // process a block
-  function parseDefBlock( previousPar : parinfo,  block : block ) : <st<_h>,div> block {
+  function parseDefBlock( previousPar : parinfo,  block : block ) : <st<_h>,div,console> block {
+    // println("\n--- parseDefBlock called ---")
+    // println("Processing block: " + block.debugBlock("  ", True))
+    // println("Previous paragraph state: " + previousPar.show)
     val attrs : attrs = match(block) {
       DefLink(id,link) -> {
         links[id] := link
@@ -228,31 +244,45 @@ function parseDefinitionsFull(
       _ -> attrsNone
     }
 
-    attrs.process( previousPar, block )
+    // println("Block attributes before processing: " + attrs.show)
+    val result = attrs.process(previousPar, block)
+    // println("Block after processing: " + result.debugBlock("  ", True))
+    result
   }
 
   function mapBlock( b : block, f ) {
-    [b].mapBlocks(f).take(1)
+    // println("\n--- mapBlock called ---")
+    // println("Processing single block: " + b.debugBlock("  ", False))
+    val result = [b].mapBlocks(f).take(1)
+    // println("Result: " + result.head.debugBlock("  ", False))
+    result
   }
 
+  // println("\n--- Starting mapBlocks on all blocks ---")
   val newblocks  = blocks.mapBlocks(parseDefBlock)
+  // println("\n--- mapBlocks complete ---")
+  // println("Final processed blocks:")
+  // newblocks.foreach fun(block) {
+  // println(block.debugBlock("", False))
+  // }
   val labelsDict = labels.freeze()
-  val tocBlocks  = //if (tocDepth <= 0) then Empty else createToc(headings.reverse)
-                    (tocs.list.map fun(entry) {
-                       (entry.fst,
-                          [createToc(entry.fst, entry.snd.reverse,labelsDict,fcontext.inlineContext.metadata,defaultAttrs)]
-                            .mapBlocks(parseDefBlock))
-                     }).dict
-  val footnoteBlock = if (isNil(footnoteItems)) then Empty
-                       else Div(Cons(HLine(), footnoteItems.reverse.concat), Attrs(classes=["footnotes","madoko"]))
-  val fblocks       = if (!footnotesAtEnd)
-                        then newblocks
-                        else match(newblocks) { // ensure it appears inside the 'body'
-                                Cons(Div(children,attrs),Nil) ->
-                                  [Div(children + [Special("FOOTNOTES")], attrs)]
-                                _ -> newblocks + [Special("FOOTNOTES")]
-                             }
+  val tocBlocks  = dict() //if (tocDepth <= 0) then Empty else createToc(headings.reverse)
+                    // (tocs.list.map fun(entry) {
+                    //    (entry.fst,
+                    //       [createToc(entry.fst, entry.snd.reverse,labelsDict,fcontext.inlineContext.metadata,defaultAttrs)]
+                    //         .mapBlocks(parseDefBlock))
+                    //  }).dict
+  val footnoteBlock = Empty // if (isNil(footnoteItems)) then Empty
+                       // else Div(Cons(HLine(), footnoteItems.reverse.concat), Attrs(classes=["footnotes","madoko"]))
+  val fblocks       = newblocks //if (!footnotesAtEnd)
+                        // then newblocks
+                        // else match(newblocks) { // ensure it appears inside the 'body'
+                        //         Cons(Div(children,attrs),Nil) ->
+                        //           [Div(children + [Special("FOOTNOTES")], attrs)]
+                        //         _ -> newblocks + [Special("FOOTNOTES")]
+                        //      }
 
+ // section can be either simple headings (without the no-section tag) or blocks with the section tag
   val secblocks = fblocks.sections(secInit(secBase=secBase,secMax=secDepth,secDefaults=fun(a){ defaultAttrs.matchRules("section",a) }))
 
   (secblocks,
@@ -265,7 +295,7 @@ struct secinfo(
   level   : int,  // current level; start at 1
   secMax  : int,  // max level for sections
   secBase : int,   // level used is max(base,level)
-  secDefaults: attrs -> attrs
+  secDefaults: attrs -> console attrs
 )
 
 val secInit = Secinfo(1,6,1,id)
@@ -277,8 +307,18 @@ type parinfo {
   ParBlock
 }
 
+function show(p: parinfo): string {
+  match(p) {
+    ParNone -> "ParNone"
+    ParEnded -> "ParEnded"
+    ParBlock -> "ParBlock"
+  }
+}
+
 function mapBlocks( blocks : list<block>,
-                    action : (parinfo,block) -> <st<h>,div|e> block  ) : <st<h>,div|e> list<block> {
+                    action : (parinfo,block) -> <st<h>,div,console|e> block  ) : <st<h>,div,console|e> list<block> {
+  // println("\n--- mapBlocks function called ---")
+  // println("Processing " + blocks.length.show + " blocks")
   var previousPar := ParNone
   blocks.map fun(block) {
     val nblock = action(previousPar,block)
@@ -311,7 +351,8 @@ function mapBlocks( blocks : list<block>,
 }
 
 // Sets new attributes for a block, and applies conversion to text
-function setAttrs( block : block, xs : attrs, fcontext : formatContext ) : block {
+function setAttrs( block : block, xs : attrs, fcontext : formatContext ) : console block {
+  // println("Setting attributes for block")
   match(block) {
     HLine(_)            -> HLine(xs)
     Para( text )        -> Para(xs.transformText(text,dict(),fcontext.inlineContext.metadata),xs)
@@ -346,7 +387,7 @@ function transformItem( blocks : list<block>, attrs: attrs ) : block {
   }
 }
 
-function transformDiv( blocks : list<block>, attrs : attrs, fcontext : formatContext )  : block {
+function transformDiv( blocks : list<block>, attrs : attrs, fcontext : formatContext )  : console block {
   if (attrs.lookupKey("transform","") == "false") return Div(blocks,attrs)
   match(blocks) {                       // needed for internal divs like definition lists
     Nil              -> ()
@@ -356,10 +397,12 @@ function transformDiv( blocks : list<block>, attrs : attrs, fcontext : formatCon
   val txt = attrs.transformText(attrs.source,dict(),fcontext.inlineContext.metadata)
   match(attrs.input) {
     Tex -> {
+      // println("Parsing Div: input=Tex")
       Div(txt.parseTex(attrs.name,"",fcontext.inlineContext.verbose >= 3)
         .parseBlocks(attrs.lineNo.incLineNo,fcontext.lineMap,fcontext.inlineContext.metadata),attrs)
     }
     Markdown -> {
+      // println("Parsing Div: input=Markdown")
       val adjLineNo = match (attrs.hasKey("line-adjust")) {
         Nothing -> attrs.lineNo.incLineNo
         Just(d) -> attrs.lineNo.incLineNo(d.parseInt().maybe(0,id))
@@ -415,7 +458,7 @@ function extractCaption( blocks : list<block> ) : string
 // Divide into sections
 //--------------------------------------------------------
 
-function sections( blocks : list<block>, secinfo : secinfo ) : div list<block>
+function sections( blocks : list<block>, secinfo : secinfo ) : <div,console> list<block>
 {
   if (secinfo.level > secinfo.secMax) return blocks
   match (blocks.findHeading(secinfo)) {
@@ -424,7 +467,7 @@ function sections( blocks : list<block>, secinfo : secinfo ) : div list<block>
   }
 }
 
-function sectionMap( blocks : list<block>, secinfo : secinfo ) : div list<block>
+function sectionMap( blocks : list<block>, secinfo : secinfo ) : <div,console> list<block>
 {
   if (secinfo.level > secinfo.secMax) return blocks
   blocks.map fun(block) {
@@ -437,7 +480,7 @@ function sectionMap( blocks : list<block>, secinfo : secinfo ) : div list<block>
   }
 }
 
-function sectionSpan( h : block, blocks : list<block>,  secinfo : secinfo  ) : div list<block>
+function sectionSpan( h : block, blocks : list<block>,  secinfo : secinfo  ) : <div,console> list<block>
 {
   function createSection(content)
   {
@@ -565,7 +608,7 @@ function expandCounters( attrs : attrs, counters : mdict<h,counter>, metadata : 
 function expandCounter(lab : string, counters : mdict<h,counter>, nested : mdict<h,list<string>> ) : st<h> string
 {
   lab.replaceAll(rxcounter) fun(cap) {
-    //trace("expand: " + lab + ": found: " + cap.groups[1] + " = " + counters[cap.groups[1]].string)
+    trace("expand: " + lab + ": found: " + cap.groups[1] + " = " + counters[cap.groups[1]].maybe("none", show))
     val cname = cap.groups[1].definitionId
     match(counters[cname]) {
       Just(counter) -> counter.show
@@ -583,7 +626,7 @@ val rxcounter = regex(@"(?:\\/)?@([\w\-]+)(?:\\/)?")
 
 // adjust a counter
 function adjustCounter(counters : mdict<h,counter>,name : string, value : string, nested : mdict<h,list<string>> ) : st<h> () {
-  //trace("increment " + counter + " from " + counters[counter].string + " to " + incrementCounter(counters[counter].string,value))
+  trace("reset " + name + " from " + counters[name].maybe("none", show) + " to " + value)
   counters.setCounter( name, increment(counters[name].maybe(Counter(),id), value), nested )
   counters.resetNestedCounters(name,nested)
 }
@@ -682,7 +725,7 @@ function initializeCounter( nested : mdict<h,list<string>>, name : string ) : st
   prefixes.foreachIndexed fun(i,_) {
     val pre = prefixes.take(i+1).join("-")
     nested[pre] := Cons(name, nested[pre].maybe([],id))
-    //trace("nested: " + pre + ": " + nested[pre].maybe([],id).join(","))
+    trace("nested: " + pre + ": " + nested[pre].maybe([],id).join(","))
   }
 }
 

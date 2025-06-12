@@ -184,7 +184,7 @@ function registerColorizers( opts : options, searchDirs : list<string>, content 
             }
             Just((_,definition)) -> {
               val langName = lang.basename.noext.toLower
-              //trace("register language: " + langName + ":\n" + definition )
+              trace("register language: " + langName + ":\n" + definition )
               registerLanguage(langName,definition)
             }
           }

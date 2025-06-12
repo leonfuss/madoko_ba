@@ -1,0 +1,12 @@
+Div([], src = ~ Foo
+Bar
+~)
+
+parseAttrs
+test: TEST
+Div([], foosrc = ~ Foo
+Bar
+~)
+
+1. außere struktur
+2. erst tiefe oder ebene bei ebene?

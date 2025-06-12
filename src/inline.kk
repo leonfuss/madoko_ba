@@ -45,7 +45,7 @@ public rectype inlineContext {
                  xfmtCmd : (ctx:inlineContext,cmd:string,body:string,attrs:attrs) -> string,
                  xfmtEscape : (ctx:inlineContext,body:string,allowEntity:bool) -> string,
                  xfmtLink: (ctx:inlineContext,isImage : bool, link : link, content : string ) -> string,
-                 xfmtFootnote: (context : inlineContext, id : string, fn : footnote ) -> string,
+                 xfmtFootnote: (context : inlineContext, id : string, fn : footnote ) -> console string,
                  xfmtTable: (context : inlineContext, head : list<row>, body : list<row>, colattrs: list<attrs>, attrs : attrs ) -> string,
                  xfmtEnv : (context : inlineContext, env : string, txt : string, attrs : attrs ) -> string,
                  xfmtCodePlain : (context : inlineContext, txt : string, startline : bool ) -> string,
@@ -75,11 +75,11 @@ public struct authorinfo (
 
 public rectype footnote {
   Footnote( footnoteNum : string,
-            footnoteContent : (inlineContext) -> string,
+            footnoteContent : (inlineContext) -> console string,
             footnoteCaption : string  )
 }
 
-public function fmtCmd( context : inlineContext, cmd : string, txt : string, attrs : attrs = attrsNone ) : string {
+public function fmtCmd( context : inlineContext, cmd : string, txt : string, attrs : attrs = attrsNone ) : <console> string {
   (context.xfmtCmd)(context,cmd,txt,attrs)
 }
 
@@ -119,7 +119,7 @@ public function fmtLink( context : inlineContext, isImage : bool, link : link, c
   (context.xfmtLink)(context,isImage,link,content)
 }
 
-public function fmtFootnote(context : inlineContext, id : string, fn : footnote ) : string {
+public function fmtFootnote(context : inlineContext, id : string, fn : footnote ) : console string {
   (context.xfmtFootnote)(context,id,fn)
 }
 
@@ -127,7 +127,7 @@ public function fmtLineInfo(context : inlineContext, lineInfo : string ) : strin
   (context.xfmtLineInfo)(context,lineInfo)
 }
 
-public function fmtCodeTable(context : inlineContext, ct : codeTable, attrs : attrs = attrsNone ) : string {
+public function fmtCodeTable(context : inlineContext, ct : codeTable, attrs : attrs = attrsNone ) : <console> string {
   (context.xfmtCodeTable)(context,ct,attrs)
 }
 
@@ -188,7 +188,7 @@ public function logDataLine( attrs ) : () {
 }
 
 // Parse _inline_ markdown elements and return formatted html
-public function formatInline( context : inlineContext, txt : string, attrs : attrs = attrsNone ) : string
+public function formatInline( context : inlineContext, txt : string, attrs : attrs = attrsNone ) : <console> string
 {
   formatInlineAcc(context,builder(), txt)
 }
@@ -201,7 +201,7 @@ public function parseLineInfo( lineInfo : string ) : (string,int) {
 }
 val rxDataLine = regex( @"^(.*:)?(\d+)$")
 
-function formatInlineAcc( context : inlineContext, acc : builder<h>, txt : string) : st<h> string
+function formatInlineAcc( context : inlineContext, acc : builder<h>, txt : string) : <st<h>,console> string
 {
   if (txt=="") return acc.build
   val (s,next,_) = matchRules(context.grammar,context,txt,id)

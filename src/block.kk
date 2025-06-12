@@ -40,6 +40,102 @@ public type block {
   Special( name : string, value : string = "", attrs : attrs = attrsNone )  // Special blocks, like [TOC] or [FOOTNOTES]
 }
 
+// Debug function to display block details
+public function debugBlock( b : block, indent : string = "", showAttrs : bool = True ) : <div> string {
+  match(b) {
+    HLine(attrs) ->
+      indent + "HLine:" +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    Blank(text) ->
+      indent + "Blank:\n" +
+      indent + "  text: " + text.show
+
+    Line(text,loose,attrs) ->
+      indent + "Line:\n" +
+      indent + "  text: " + text.show + "\n" +
+      indent + "  loose: " + loose.show +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    Para(text,attrs) ->
+      indent + "Para:\n" +
+      indent + "  text: " + text.show +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    Code(text,language,attrs) ->
+      indent + "Code:\n" +
+      indent + "  text: " + text.show + "\n" +
+      indent + "  language: " + language +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    Quote(content,attrs) ->
+      indent + "Quote:" +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "") + "\n" +
+      indent + "  content:\n" +
+      content.map(fun(block) { block.debugBlock(indent + "    ", showAttrs) }).join("\n")
+
+    List(tag,content,attrs) ->
+      indent + "List:\n" +
+      indent + "  tag: " + tag +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "") + "\n" +
+      indent + "  content:\n" +
+      content.map(fun(block) { block.debugBlock(indent + "    ", showAttrs) }).join("\n")
+
+    Item(content,attrs) ->
+      indent + "Item:" +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "") + "\n" +
+      indent + "  content:\n" +
+      content.map(fun(block) { block.debugBlock(indent + "    ", showAttrs) }).join("\n")
+
+    Heading(depth,text,attrs) ->
+      indent + "Heading:\n" +
+      indent + "  depth: " + depth.show + "\n" +
+      indent + "  text: " + text.show +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    Table(header,columnAttrs,cells,attrs) ->
+      indent + "Table:" +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "") + "\n" +
+      indent + "  header rows: " + header.length.show + "\n" +
+      indent + "  column attrs: " + columnAttrs.length.show + "\n" +
+      indent + "  cell rows: " + cells.length.show
+
+    DefLink(id,link) ->
+      indent + "DefLink:\n" +
+      indent + "  id: " + id + "\n" +
+      indent + "  href: " + link.href + "\n" +
+      indent + "  title: " + link.title.show +
+      (if (showAttrs) then "\n" + indent + "  linkattrs: " + link.linkattrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    DefFootnote(id,content) ->
+      indent + "DefFootnote:\n" +
+      indent + "  id: " + id + "\n" +
+      indent + "  content:\n" +
+      content.map(fun(block) { block.debugBlock(indent + "    ", showAttrs) }).join("\n")
+
+    Empty() ->
+      indent + "Empty"
+
+    Div(content,attrs) ->
+      indent + "Div:" +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "") + "\n" +
+      indent + "  content:\n" +
+      content.map(fun(block) { block.debugBlock(indent + "    ", showAttrs) }).join("\n")
+
+    Source(text,input,parentAttrs) ->
+      indent + "Source:\n" +
+      indent + "  text: " + text.show + "\n" +
+      indent + "  input: " + input.showInput +
+      (if (showAttrs) then "\n" + indent + "  parentAttrs: " + parentAttrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+
+    Special(name,value,attrs) ->
+      indent + "Special:\n" +
+      indent + "  name: " + name + "\n" +
+      indent + "  value: " + value.show +
+      (if (showAttrs) then "\n" + indent + "  attrs: " + attrs.debugAttrs.replaceAll(regex(@"\n"),"\n" + indent + "  ") else "")
+  }
+}
+
 /* --------------------------------------
  Block grammar
 ---------------------------------------- */
@@ -94,29 +190,29 @@ val rxtableBody   = @"((?: *(?:\||\+[-=]).*(?:\n|$))+)"
 
 // The main block grammar
 val blockGrammar : grammar<block,blockContext> = [
-  Rule("lheading",   regex(@"^(?!    )([^ \n].*?)" + iattrs + @"\n *(===+|---+) *(?:\n+|$)"), blockHeadingLine ),
-  Rule("deflist",    regex(deflist), blockDefList ),
-  Rule("parax",      regex(@"^(" + notbspecial + @"[^|\n]*?(?:\n|$)(?:(?!" + endpara + @").+(?:\n|$))*)\n*"), blockPara ),
+  // Rule("lheading",   regex(@"^(?!    )([^ \n].*?)" + iattrs + @"\n *(===+|---+) *(?:\n+|$)"), blockHeadingLine ),
+  // Rule("deflist",    regex(deflist), blockDefList ),
+  // Rule("parax",      regex(@"^(" + notbspecial + @"[^|\n]*?(?:\n|$)(?:(?!" + endpara + @").+(?:\n|$))*)\n*"), blockPara ),
 
-  Rule("code",       regex(@"^(    (?:.|\n+    )*)\n*"), blockCode ),
-  Rule("html",       regex(@"^ *" + html), blockHtml ),
-  Rule("deflink",    regex(@"^ *\[(?!\^)" + xlinkid + @"\]: *<?((?:[^\\\s>]|\\(?:.|\n *))+)>?(?: +[""(]((?:[^\n\\]|\\(?:.|\n *))+)["")])?(?: |\\\n *)*" +iattrs+ @"(\n+|$)"), blockDefLink ),
-  Rule("deffootnote",regex(@"^ *\[\^" + xlinkid + @"\]: *(?:\n {4})?(.*(?:\n+ {4}.*)*)(?:\n+|$)"), blockDefFootnote),
-  Rule("hline",      regex(@"^ *" + hr), blockHLine ),
+  // Rule("code",       regex(@"^(    (?:.|\n+    )*)\n*"), blockCode ),
+  // Rule("html",       regex(@"^ *" + html), blockHtml ),
+  // Rule("deflink",    regex(@"^ *\[(?!\^)" + xlinkid + @"\]: *<?((?:[^\\\s>]|\\(?:.|\n *))+)>?(?: +[""(]((?:[^\n\\]|\\(?:.|\n *))+)["")])?(?: |\\\n *)*" +iattrs+ @"(\n+|$)"), blockDefLink ),
+  // Rule("deffootnote",regex(@"^ *\[\^" + xlinkid + @"\]: *(?:\n {4})?(.*(?:\n+ {4}.*)*)(?:\n+|$)"), blockDefFootnote),
+  // Rule("hline",      regex(@"^ *" + hr), blockHLine ),
 
-  Rule("list",       regex(@"^" + alist), blockList ),  // before heading due to #.
+  // Rule("list",       regex(@"^" + alist), blockList ),  // before heading due to #.
   Rule("heading",    regex(@"^ *(#{1,6})(0?) *(.+?) *#* *" + iattrs + @"(?:\n+|$)"), blockHeading ),
-  Rule("blockquote", regex(@"^((?: *>.+(?:\n[^{\n]+)*\n*)+)" + battrs + "(?:\n+|$)"), blockQuote ),
-  Rule("fenced",     regex(@"^ *(```+) *(?:([^{}\s]+) *)?" + iattrs + @"\n([\s\S]+?)\n *\1 *(?:\n+|$)"), blockFencedCode ),
+  // Rule("blockquote", regex(@"^((?: *>.+(?:\n[^{\n]+)*\n*)+)" + battrs + "(?:\n+|$)"), blockQuote ),
+  // Rule("fenced",     regex(@"^ *(```+) *(?:([^{}\s]+) *)?" + iattrs + @"\n([\s\S]+?)\n *\1 *(?:\n+|$)"), blockFencedCode ),
 
-  Rule("table",      regex(@"^ *" + rxtableHeader + rxtableSep + rxtableBody + pattrs + @"\n*"), blockTable ),
-  Rule("nptable",    regex(@"^ *(\S[^|\n]*?\|.*?)\n *([-=~:]+ *\|[-=~| :]*)\n((?:.*\|.*(?:\n|$))*)" + pattrs + @"\n*"), blockNpTable ),
+  // Rule("table",      regex(@"^ *" + rxtableHeader + rxtableSep + rxtableBody + pattrs + @"\n*"), blockTable ),
+  // Rule("nptable",    regex(@"^ *(\S[^|\n]*?\|.*?)\n *([-=~:]+ *\|[-=~| :]*)\n((?:.*\|.*(?:\n|$))*)" + pattrs + @"\n*"), blockNpTable ),
 
   Rule("divnamed",   regex(@"^ *(~+) *[Bb]egin +([\w\d\-]*) *" + iattrs + @"(?=\n)([\s\S]*?)\n *\1 *[Ee]nd +\2 *(?:\n+|$)"), blockDiv ),
   Rule("div",        regex(@"^ *(~+) *([\w\d\-]*) *" + iattrs + @"(?=\n)([\s\S]*?)\n *\1 *(?:\n+|$)"), blockDiv ),
 
-  Rule("special",    regex(@"^ *\[ *(TOC|FOOTNOTES|TITLE)(?: *= *([\w-]*))? *\] *\n*"), blockSpecial ),
-  Rule("para",       regex(@"^(.+(?:\n|$)(?:(?!" + endpara + @").+(?:\n|$))*)\n*"), blockPara ),
+  // Rule("special",    regex(@"^ *\[ *(TOC|FOOTNOTES|TITLE)(?: *= *([\w-]*))? *\] *\n*"), blockSpecial ),
+  // Rule("para",       regex(@"^(.+(?:\n|$)(?:(?!" + endpara + @").+(?:\n|$))*)\n*"), blockPara ),
   Rule("blank",      regex(@"^\n+"), blockBlank ),
   ruleLine,
 ]
@@ -151,7 +247,7 @@ rectype blockContext {
 /* --------------------------------------
  Block element functions
 ---------------------------------------- */
-function blockSpecial( cap : matched, context : blockContext ) : block {
+function blockSpecial( cap : matched, context : blockContext ) : console block {
   function joinnl( lines : list<string> ) : string {
     lines.map(fun(line) { line + "\n" }).join
   }
@@ -190,7 +286,7 @@ function blockSpecial( cap : matched, context : blockContext ) : block {
        entry("author-note" + idx.show, "AuthorNote"),
        entry("email" + idx.show, "AuthorEmail")].concat)
   }
-  function authorRow( idxs : list<int> ) : list<string> {
+  function authorRow( idxs : list<int> ) : console list<string> {
     mkblock("AuthorRow", idxs.concat(author))
   }
   if (cap.groups[1].toLower == "title") {
@@ -207,7 +303,7 @@ function blockSpecial( cap : matched, context : blockContext ) : block {
   }
 }
 
-function blockPara( cap : matched, _context ) : block {
+function blockPara( cap : matched, _context ) : console block {
   val full = cap.groups[1]
   val (txt,attrTxt) = match(full.find(rxPattrs)) {
     Nothing   -> (full,"")
@@ -217,7 +313,7 @@ function blockPara( cap : matched, _context ) : block {
 }
 val rxPattrs = regex(@"\n {0,3}" + xattrs + @"\s*$")
 
-function blockDefLink( cap : matched, context : blockContext ) :  block {
+function blockDefLink( cap : matched, context : blockContext ) :  console block {
   val id = cap.groups[1].definitionId
   DefLink(id, newLink(cap.groups[2].joinLines, cap.groups[3].joinLines, cap.groups[4].parseAttrs, id, context.bench ))
 }
@@ -265,11 +361,11 @@ function blockFencedCode( cap : matched, context : blockContext ) {
           else attrs)
 }
 
-function blockQuote( cap : matched, context : blockContext ) : block {
+function blockQuote( cap : matched, context : blockContext ) : <console> block {
   val text = cap.groups[1].replaceAll(rxquotePrefix,"")
-  //mtrace("---")
+  trace("---")
   val content = parseBlocks(context,text)
-  //mtrace("--- end quote")
+  trace("--- end quote")
   Quote(content,cap.groups[2].parseAttrs)
 }
 val rxquotePrefix = regex(@"^ *> ?",multiline=True)
@@ -281,7 +377,7 @@ function blockDiv( cap : matched, context : blockContext ) : block {
   Div( [], attrs )
 }
 
-function blockDefFootnote( cap : matched, context : blockContext ) :  block {
+function blockDefFootnote( cap : matched, context : blockContext ) :  <console> block {
   val id  = cap.groups[1].definitionId
   val txt = "~ Begin Footnote { id='fn-" + id + "' }\n" +
                cap.groups[2].replaceAll(rxindent4,"") + "\n" +
@@ -292,9 +388,9 @@ function blockDefFootnote( cap : matched, context : blockContext ) :  block {
 // --------------------------------
 // Definition Lists
 
-function blockDefList( cap : matched, context : blockContext ) : block {
-  function parseItem( extraAttrs : string, icap : matched, line : int, icontext : blockContext ) :  list<block> {
-    //trace("item:\n" + icap.matched)
+function blockDefList( cap : matched, context : blockContext ) : <console> block {
+  function parseItem( extraAttrs : string, icap : matched, line : int, icontext : blockContext ) : <console> list<block> {
+    trace("item:\n" + icap.matched)
     val item = icap.groups[4].replaceAll(rxindent4,"")
     val attrs = icap.groups[3].parseAttrs("dd",source=item)
     val term  = if (icap.groups[1]=="") then icap.groups[2] else icap.groups[1]
@@ -314,10 +410,10 @@ val rxDefItem = regex( @"^(?:" + defitem + @")?" + defstart + "(?:" + iattrs + @
 // --------------------------------
 // Lists
 
-function blockList( cap : matched, context : blockContext ) : block {
+function blockList( cap : matched, context : blockContext ) : <console> block {
   val tag  = if (cap.groups[2].length > 1) then "ol" else "ul"
 
-  function parseItem( extraAttrs : string, icap : matched, line : int, icontext : blockContext ) :  list<block> {
+  function parseItem( extraAttrs : string, icap : matched, line : int, icontext : blockContext ) :  <console> list<block> {
     val item = icap.groups[4].replaceAll(if (icontext.pedantic)
                                            then rxindent4
                                            else rxindent(icap.groups[1].length) ,"")
@@ -343,7 +439,7 @@ function blockList( cap : matched, context : blockContext ) : block {
 val rxitem      = regex(@"^(( *)(?:" + bullrest + @") +)(?:" + iattrs + @")?(.*(?:\n(?!\2" + bullrest + @" ).*)*\n?)",multiline=True);
 
 function blockListX( text : string, context : blockContext,
-                     tag : string, attrsInit : string, rxParseItem : regex, parseItem : (string,matched,int,blockContext) -> list<block> ) : block
+                     tag : string, attrsInit : string, rxParseItem : regex, parseItem : (string,matched,int,blockContext) -> <console> list<block> ) : <console> block
 {
   val loose = text.contains(blankline)
   // we should merge any text blocks into a paragraph for a loose list
@@ -484,14 +580,15 @@ public function parseBlocks( src : string, lineNo : int, lineMap : lineMap,
                              mdata : dict<string>,
                              bench : bool = False,
                              pedantic : bool = False
-                             )  : list<block>
+                             )  : <console> list<block>
 {
+  // println("-- block.kk:585 - parseBlocks --\n src: \n" +  src)
   val bcontext = BlockContext(blockGrammar, blockListGrammar, mdata, bench, pedantic, False, lineNo, lineMap)
   parseBlocks(bcontext,src)
 }
 
 // Parse text into blocks
-function parseBlocks( context : blockContext, src : string, line : int = 0 ) : list<block>
+function parseBlocks( context : blockContext, src : string, line : int = 0 ) : <console> list<block>
 {
   val bs = if (line > 0)
             then parseBlocksAccLine( context(lineNo = line), Nil, line, src )
@@ -502,14 +599,14 @@ function parseBlocks( context : blockContext, src : string, line : int = 0 ) : l
 }
 
 
-function parseBlocksAcc( context : blockContext,  acc : list<block>, src : string ) : list<block>
+function parseBlocksAcc( context : blockContext,  acc : list<block>, src : string ) : <console> list<block>
 {
   if (src=="") return acc;
   val (block,next,_) = matchRules(context.grammar,context,src,raw)
   parseBlocksAcc( context, Cons(block,acc), src.substr1(next) )
 }
 
-function parseBlocksAccLine( context : blockContext,  acc : list<block>, line : int, src : string ) : list<block>
+function parseBlocksAccLine( context : blockContext,  acc : list<block>, line : int, src : string ) : <console> list<block>
 {
   if (src=="") return acc;
   val (block,next,matched) = matchRules(context.grammar,context(lineNo=line),src,raw)

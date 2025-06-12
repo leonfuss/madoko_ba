@@ -1,4 +1,4 @@
-module includes 
+module includes
 
 import std/string
 import std/log
@@ -17,7 +17,11 @@ struct snippet(
 )
 
 public function include( text : string, fast : bool, inName : string, outName : string, dirs : list<string>, options : options, action : (string,lineMap) -> <io|e> a ) : <io|e> a {
-  if (fast) then return action(text,End) 
+  trace("include: \n" + text)
+
+  trace(options.show)
+
+  if (fast) then return action(text,End)
 
   val includes : mdict<global,string> = mdict()
   val snippets : mdict<global,snippet> = mdict()
@@ -28,11 +32,11 @@ public function include( text : string, fast : bool, inName : string, outName : 
   val rxSnippetStart = regex(snippetStart, multiline=True, ignoreCase=True)
   val rxSnippetEnd = regex(snippetEnd, multiline=True, ignoreCase=True)
 
-  //trace("snippet start: " + rxSnippetStart.source)
-  //trace("snippet end: " + rxSnippetEnd.source)
+  trace("snippet start: " + rxSnippetStart.source)
+  trace("snippet end: " + rxSnippetEnd.source)
 
   function warning( msg, lineNo = 0, fileName = "") {
-    options.printErr( "warning: " + 
+    options.printErr( "warning: " +
              (if (fileName != "" || lineNo > 0)
                then fileName + (if (lineNo > 0) then ":" + lineNo.show else "") + ": "
                else "") +
@@ -84,7 +88,7 @@ public function include( text : string, fast : bool, inName : string, outName : 
     match(content) {
       Nil -> ()
       Cons(line,lines) -> {
-        //trace("find snippet: " + line)
+        trace("find snippet: " + line)
         match(line.find(rxSnippetStart)) {
           Nothing -> findSnippets( lines, fname, lineNo+1 )
           Just(cap) -> {
@@ -97,32 +101,32 @@ public function include( text : string, fast : bool, inName : string, outName : 
     }
   }
 
-  function readInclude( fname : string, srcname, lineNo, included : list<string> ) : io (string,string) 
+  function readInclude( fname : string, srcname, lineNo, included : list<string> ) : io (string,string)
   {
     if (fname=="") then {
       ("","\n")  // happens for snippet only includes
     }
     elif (fname.startsWith("BIB=")) then {
       val auxStem = fname.substr(4)
-      val fileName= outName.noext + "-bib" + (if (auxStem=="") then "" else "-" + auxStem) + ".bbl.mdk"      
+      val fileName= outName.noext + "-bib" + (if (auxStem=="") then "" else "-" + auxStem) + ".bbl.mdk"
       val bbl     = match (includes[fileName]) {
                       Just(s) -> s
                       Nothing -> {
-                        val s = readTextFileDef( fileName, "", True)  
+                        val s = readTextFileDef( fileName, "", True)
                         includes[fileName] := s
                         s
                       }
                     }
-      val content = ("~ Begin Bibl { id: \"" + auxStem + "\"; bib-id: \"" + auxStem + "\"; bbl-file: \"" + fileName + "\" }\n" + 
-                     (if (bbl=="") then "~ Begin Bibliography { .bib-numeric; caption:\"0\"}\n~ End Bibliography\n" 
-                                   else bbl) + 
+      val content = ("~ Begin Bibl { id: \"" + auxStem + "\"; bib-id: \"" + auxStem + "\"; bbl-file: \"" + fileName + "\" }\n" +
+                     (if (bbl=="") then "~ Begin Bibliography { .bib-numeric; caption:\"0\"}\n~ End Bibliography\n"
+                                   else bbl) +
                      "\n~ End Bibl\n")
       (fileName,content)
     }
     else {
       // avoid including recursively
       val searchName = if (fname.extname == "") then fname + ".mdk" else fname;
-      val searchDirs = if (inName.basename != searchName) then dirs 
+      val searchDirs = if (inName.basename != searchName) then dirs
                         else dirs.filter( fun(dir) { dir != inName.dirname });
       // .. and search
       match (trySearchReadTextFile(fname,searchDirs,".mdk")) {
@@ -132,7 +136,7 @@ public function include( text : string, fast : bool, inName : string, outName : 
           warning("unable to read include: " + fname, lineNo, srcname )
           (fileName,"")
         }
-        Just((fileName,content)) -> {          
+        Just((fileName,content)) -> {
           if (included.contains(fileName)) then {
             warning("recursive include: " + fileName.show)
             (fileName,"")
@@ -147,7 +151,7 @@ public function include( text : string, fast : bool, inName : string, outName : 
             }
             (fileName,content)
           }
-        } 
+        }
       }
     }
   }
@@ -183,7 +187,7 @@ public function include( text : string, fast : bool, inName : string, outName : 
         if (start<=0) return (incfile,0,"")
         val end   = max(start-1,cap.groups[2].parseIntDefault(start + 1000000))
         val fragment = content.lines.list.drop(start-1).take((end - start) + 1).join("\n")
-        //trace("include: " + start.show + "," + end.show + ":\n" + fragment)
+        trace("include: " + start.show + "," + end.show + ":\n" + fragment)
         (incfile,start,fragment)
       }
     }
@@ -208,21 +212,21 @@ public function include( text : string, fast : bool, inName : string, outName : 
       Just(cap) -> Just((cap.matched,cap.groups.firstMatched(1,3),cap.groups[4]))
       Nothing -> match(line.find(rxBib)) {
         Just(cap) -> Just((cap.matched,"BIB=" + cap.groups.firstMatched(1,3), ""))
-        Nothing   -> Nothing 
+        Nothing   -> Nothing
       }
     }
-    match(mbincname) { 
+    match(mbincname) {
       Nothing -> (line,lineMap,1)
       Just((matched,incname,range)) -> {
         val (fileName0,content) = readInclude(incname,fname,lineNo,included)
         val (fileName,istart,fragment) = fileName0.findRange(matched, range, content, fname, lineNo);
-        if (istart<=0) 
+        if (istart<=0)
          then ("",lineMap,1)
          else {
           val (lcount,lmap,icontent) = processIncludesRec( fragment, fileName, Cons(fileName,included), istart )
           val lineMapNew = Include(lineNo,istart,lcount+extra,fileName,lmap,lineMap)
-          //lineCount := lineCount + lcount - 1
-          //trace("include: " + lineNo.show + ", " + lcount.show + ", " + lineCount.show)
+          // lineCount := lineCount + lcount - 1
+          // trace("include: " + lineNo.show + ", " + lcount.show + ", " + lineCount.show)
           (icontent, lineMapNew, lcount)
         }
       }
@@ -235,10 +239,10 @@ public function include( text : string, fast : bool, inName : string, outName : 
     var lineNo := start-1
     var lineCount := 0
     var lineMap := End
-    val preludeTxt = 
+    val preludeTxt =
       if (prelude != "") {
         val (icontent,lmap,lcount) = processIncludeLine(fname,"[INCLUDE=\"" + prelude + "\"]",included,lineMap,lineNo,1)
-        lineCount := lineCount + lcount 
+        lineCount := lineCount + lcount
         lineMap   := lmap
         ((if (options.xmp) then "<xmp>" + icontent + "</xmp>" else icontent) + "\n")
       }
@@ -261,7 +265,7 @@ public function include( text : string, fast : bool, inName : string, outName : 
             val (lcount,lmap,icontent) = processIncludesRec( fragment, fileName, istart )
             lineMap := Include(lineNo,istart,lcount,fileName,lmap,lineMap)
             lineCount := lineCount + lcount - 1
-            //trace("include: " + lineNo.show + ", " + lcount.show + ", " + lineCount.show)
+            trace("include: " + lineNo.show + ", " + lcount.show + ", " + lineCount.show)
             icontent
           }
         }
@@ -286,7 +290,7 @@ public function searchReadTextFileDef( fname : string, def : string, dirs : list
   match(trySearchReadTextFile(fname,dirs,ext,required)) {
     Nothing -> def
     Just((_,content)) -> content
-  } 
+  }
 }
 
 public function trySearchReadTextFile( fname : string, dirs : list<string>, ext : string = "", required : bool = True  ) : io maybe<(string,string)> {
@@ -302,7 +306,7 @@ public function trySearchReadTextFile( fname : string, dirs : list<string>, ext 
           Just(fullname) -> tryReadTextFile(fullname,required).maybe.maybe(Nothing,fun(txt){ Just((fullname,txt)) })
         }
       }
-    } 
+    }
     Just(fullname) -> tryReadTextFile(fullname,required).maybe.maybe(Nothing,fun(txt){ Just((fullname,txt)) })
   }
 }

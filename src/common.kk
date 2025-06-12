@@ -36,6 +36,20 @@ public function peano(n : int ) : peano {
   p
 }
 
+public function show( p : peano ) : string {
+  match(p) {
+    Zero -> "0"
+    Succ(prev) -> (1 + showInt(prev)).show
+  }
+}
+
+function showInt( p : peano ) : int {
+  match(p) {
+    Zero -> 0
+    Succ(prev) -> 1 + showInt(prev)
+  }
+}
+
 public val peano10= peano(10)
 public val peanoN = peano(100)
 
@@ -63,7 +77,7 @@ public function json(s : string) : string {
 public struct rule<a,c>(
   name : string,
   regex : regex,
-  action : (cap : matched, context : c) -> a )
+  action : (cap : matched, context : c) -> <console> a )
 
 public alias grammar<a,c> = list<rule<a,c>>
 
@@ -103,24 +117,27 @@ public function combineRules( rules : list<rule<a,c>> ) : rule<a,c> {
 // Generic rule matcher: takes a list of rules and applies the action that matches
 // on the given "src". Returns the result of the action and the string following the
 // match.
-public function matchRules( rules : grammar<a,c>, context : c, src : string, def : string -> a ) : (a,int,string)
+public function matchRules( rules : grammar<a,c>, context : c, src : string, def : string -> a ) : <console> (a,int,string)
 {
+  // println("--- matchRules called ---")
   match(rules) {
     Nil -> {
-      //trace("Unable to match any rule!")
+      // println("No rules matched. Default action applied.")
       val matched = src.substr(0,1)
+      // println("Default matched text: " + matched)
       (def(matched), 1, matched) //src.substr(1))
     }
     Cons(rule,rulesNext) -> {
       match (src.find(rule.regex)) {
         Just(cap) -> {
-          //if (rule.name[0] != '.') then trace("match: " + rule.name.fill(12) + ": " + cap.matched.show )
-          // Uncomment the next line to get a histogram of rule matches
-          // ruleInc(rule.name)
+
+          // println("  Rule matched: " + rule.name)
+          // println("Source: " + src)
+          // println("  Matched text: " + cap.matched)
           ((rule.action)(cap,context), cap.next, cap.matched)//src.substr(cap.next))
         }
         Nothing -> {
-          //stat("fail-" + rule.name)
+          // println("Rule did not match: " + rule.name)
           matchRules(rulesNext,context,src,def)
         }
       }
@@ -300,6 +317,21 @@ public struct label( element : string, labelText : string, labelCaption : string
 
 public function show( attrs : attrs ) : string {
   "{" + attrs.text + "}"
+}
+
+public function debugAttrs( attrs : attrs ) : string {
+  "Attrs Debug:\n" +
+  "  text: " + attrs.text + "\n" +
+  "  replacers: [" + attrs.replacers.join(", ") + "]\n" +
+  "  elem: " + attrs.elem + "\n" +
+  "  texelem: " + attrs.texelem + "\n" +
+  "  name: " + attrs.name + "\n" +
+  "  label: " + attrs.label + "\n" +
+  "  classes: [" + attrs.classes.join(", ") + "]\n" +
+  "  counters: [" + attrs.counters.map(fun(c) { c.fst + "=" + c.snd }).join(", ") + "]\n" +
+  "  keyvals: [" + attrs.keyvals.map(fun(kv) { kv.fst + "=" + kv.snd }).join(", ") + "]\n" +
+  "  sticky: " + attrs.sticky.show + "\n" +
+  "  source: \n" + attrs.source
 }
 
 // Attributes

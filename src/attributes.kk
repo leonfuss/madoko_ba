@@ -17,9 +17,14 @@ import entity
 import expression
 
 public function parseAttrs( attrStr : string, elemName : string = "", source : string = "" ) : attrs {
-  if (attrStr == "" && elemName == "" && source=="") return attrsNone
-  val attrs0 = Attrs() // source=source,classes=if (className=="") then [] else [className])
-  attrs0.extendAttrs( (if (elemName!="") then "elem:'" + elemName + "'; " else "") + attrStr, source )
+  unsafeTotal {
+    // println("parsing attributes: \n attrStr: " + attrStr + "\nsource: " + source)
+    if (attrStr == "" && elemName == "" && source=="") return attrsNone
+    val attrs0 = Attrs() // source=source,classes=if (className=="") then [] else [className])
+    val ret = attrs0.extendAttrs( (if (elemName!="") then "elem:'" + elemName + "'; " else "") + attrStr, source )
+    // println("after parsing: " + attrs0.debugAttrs)
+    ret
+  }
 }
 
 public function mergeDefault( attrs : attrs, def : attrs ) : attrs {
@@ -42,6 +47,8 @@ function show( p : pattern ) {
   "~" + p.elem + "#" + p.name + "." +  p.classes.join(".") +
    p.attrselectors.map(fun(e) { "[" + e.expression/show + "]" }).join
 }
+
+
 
 function makePattern( elem : string = "", name : string = "",
                       classes : list<string> = [],
@@ -69,7 +76,7 @@ public function rulesFromMeta( metadata : list<(string,string)> ) : rules {
           val attrsels = parseAttrSelectors(cap.groups[4])
           val classes  = cap.groups[3].split(".").list
           val pat = makePattern( cap.groups[1], cap.groups[2], classes, attrsels )
-          // trace("pattern: " + key + " -> " + pat.show )
+          trace("pattern: " + key + " -> " + pat.show )
           [(pat,value)]
         }
       }
@@ -80,38 +87,57 @@ public function rulesFromMeta( metadata : list<(string,string)> ) : rules {
 }
 val rxPattern = regex(@"^(?:~([\w\-:]+))?(?:#([\w\-:]+))?((?:\.(?:[\w\-:]+))*)(?:(\[[^\]]*\])*)$")
 
-public function matchRules( r : rules, elementName : string, attrs : attrs ) : attrs
+public function matchRules( r : rules, elementName : string, attrs : attrs ) : <console> attrs
 {
-  if (!(attrs.common/defaults)) return attrs;
+  // println("\n--- matchRules called attributes ---")
+  // println("Element name: " + elementName)
+  // println("Attrs: " + attrs.show)
+  if (!(attrs.common/defaults)) {
+    // println("Skipping rule matching (defaults=false)")
+    return attrs
+  }
   val name = attrs.name.definitionId
   val elemName = elementName.definitionId
-  r.rules.apply( attrs, name, elemName, peano10 )
+  // println("Looking for rules matching element: " + elemName + ", name: " + name + ", classes: [" + attrs.classes.join(", ") + "]")
+  val result = r.rules.apply( attrs, name, elemName, peano10 )
+  // println("Final attrs after rule matching: " + result.show)
+  result
 }
 
-function apply( rules : list<(pattern,string)>, attrs : attrs, name : string, elemName : string, p : peano ) : attrs {
+function apply( rules : list<(pattern,string)>, attrs : attrs, name : string, elemName : string, p : peano ) : <console> attrs {
   match(p) {
     Zero -> attrs
     Succ(p1) -> {
+      // println("Apply iteration (remaining: " + p1.show + ")")
       val (def,rules2) = rules.getMatches( attrs, name, elemName )
-      if (def=="") return attrs
+      if (def=="") {
+        // println("No matching rules found in this iteration")
+        return attrs
+      }
+      // println("Found matching rule(s), merging attributes with: " + def)
       val attrs2 = attrs.mergeDefault(def.parseAttrs)
+      // println("After merging: " + attrs2.show)
       rules2.apply( attrs2, name, elemName, p1 )
     }
   }
 }
 
-function getMatches( rules : list<(pattern,string)>, attrs : attrs, name : string, elemName : string ) : (string,list<(pattern,string)>) {
+function getMatches( rules : list<(pattern,string)>, attrs : attrs, name : string, elemName : string ) : <console> (string,list<(pattern,string)>) {
+  // println("Checking " + rules.length.show + " rules for matches")
   var def := []
   val newrules = rules.filterx( fun(rule) {
     val (pat,value) = rule
     if (pat.matches(elemName,name,attrs)) {
-      //trace("matched: weight:" + pat.weight.show + ": " + makePattern(elemName,name,attrs.classes).show + " to rule " + pat.show + ": " + value.substr(0,80))
+      // println("MATCHED RULE: weight:" + pat.weight.show + ": " + pat.show + " with value: " + value.substr(0,80))
       def := def.insert(pat.weight, value)
       False
     }
-    else True
+    else {
+      True
+    }
   })
   val final = def.map(snd).join(" ; ")
+  // println("Final merged value: " + final)
   (final,newrules)
 }
 
@@ -127,11 +153,20 @@ function insert( xs : list<(int,string)>, weight :int, value : string ) : list<(
   }
 }
 
-function matches( pat : pattern, xelem : string, xname : string, attrs : attrs ) : bool {
-  (pat.elem.isEmpty || pat.elem == xelem) &&
-  (pat.name.isEmpty || pat.name == xname) &&
-  (pat.classes.isNil || pat.classes.all( fun(c) { attrs.hasClass(c) } )) &&
-  (pat.attrselectors.isNil || pat.attrselectors.all(fun(e) { matchSelector(e,attrs) }))
+function matches( pat : pattern, xelem : string, xname : string, attrs : attrs ) : <console> bool {
+  val elemMatch = (pat.elem.isEmpty || pat.elem == xelem)
+  val nameMatch = (pat.name.isEmpty || pat.name == xname)
+  val classesMatch = (pat.classes.isNil || pat.classes.all( fun(c) { attrs.hasClass(c) } ))
+  val selectorsMatch = (pat.attrselectors.isNil || pat.attrselectors.all(fun(e) { matchSelector(e,attrs) }))
+
+
+  // println("  Pattern match check:")
+  // println("    - Element match (" + pat.elem + " vs " + xelem + "): " + elemMatch.show)
+  // println("    - Name match (" + pat.name + " vs " + xname + "): " + nameMatch.show)
+  // println("    - Classes match (" + pat.classes.join(",") + "): " + classesMatch.show)
+  // println("    - Attr selectors match: " + selectorsMatch.show)
+
+  elemMatch && nameMatch && classesMatch && selectorsMatch
 }
 
 function matchSelector( e : expr, attrs : attrs ) : bool {
@@ -197,7 +232,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
            classes=["clearnum"] + acc.classes.filter(fun(nm) { nm != "clearnum" }) )
     }
     elif (start=="#") {
-      //trace("attrs name: " + name + ": " + value.show)
+      trace("attrs name: " + name + ": " + value.show)
       acc(name = name.substr(1).definitionId, label = if (value!="") then value else acc.label)
     }
     elif (start==".") {
@@ -206,7 +241,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
        then acc else acc(classes = acc.classes + [cname])
     }
     elif (start=="@") {
-      //trace("counter: " + name + ": " + value)
+      trace("counter: " + name + ": " + value)
       acc(counters = acc.counters + [(name.substr(1), value)] )
     }
     elif (name=="elem") {
@@ -220,7 +255,7 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
       acc(htmlelem = value )
     }
     elif (name=="id") {
-      //trace("id: " + value)
+      trace("id: " + value)
       acc(name = value.definitionId )
     }
     elif (name=="class") {
@@ -283,13 +318,13 @@ public function extendAttrs( attrs0 : attrs, attrsStr : string, source : string 
       acc(tight=value.toBool)
     }
     else {
-      //trace("key " + name + "=" + value)
+      trace("key " + name + "=" + value)
       val cntrs = if (name=="start") then match (value.trim.parseInt) {
                     Just(i) -> acc.counters + [(acc.elem + "-li",(i-1).show)]
                     Nothing -> acc.counters
                   }
                   elif (name=="list-style-type" && acc.elem.bool) then {
-                    //trace("list-style-type: @" + acc.elem + "-li=" + value.trim )
+                    trace("list-style-type: @" + acc.elem + "-li=" + value.trim )
                     acc.counters + [(acc.elem + "-li",value.trim)]
                   }
                   else acc.counters
@@ -384,7 +419,7 @@ public function transformText( attrs : attrs, txt : string, labels : dict<label>
   if (attrs.empty) then return txt
   attrs.replacers.foldl(txt,fun(cur,repl) {
     val res = repl.applyReplacer(cur,attrs,labels,metadata)
-    //trace("replacer '" + erepl.substr(0,10) + "': " + cur + " -> " + res)
+    trace("replacer '" + repl.substr(0,10) + "': " + cur + " -> " + res)
     res
   })
 }
@@ -432,7 +467,7 @@ function evalCondition( cond : string, source : string, attrs : attrs, labels : 
     String(expandKeys("&" + v + ";", source,attrs,labels,metadata))
   }
   val res = evaluate( cond, fun(e) { evalExpr(e,lookup) }, String(""))
-  // trace("eval condition: " + res.show + ": " + cond)
+  trace("eval condition: " + res.show + ": " + cond)
   res
 }
 
@@ -532,7 +567,7 @@ function regexReplacer( rxText : string, rtxt : string, flags : string, txt : st
   val gtxt = if (flags.contains("g"))
               then txt.replaceAll(rexp,replaceGroups)
               else txt.replace(rexp,replaceGroups)
-  //trace("replace (" + rxText.substr(0,20) + "): '" + txt + "' to '" + gtxt + "'")
+  trace("replace (" + rxText.substr(0,20) + "): '" + txt + "' to '" + gtxt + "'")
   gtxt
 }
 
